@@ -1,12 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+//require('.env').config();
+require('dotenv').config();
+
 
 app.use(cors());
 app.use(express.json());
 
 const MongoClient = require('mongodb').MongoClient;
-const url = 'mongodb+srv://nnewman:UCF$um2020@weight-trackerdb.idigxij.mongodb.net/?appName=weight-trackerDB';
+//const url = 'mongodb+srv://nnewman:UCF$um2020@weight-trackerdb.idigxij.mongodb.net/?appName=weight-trackerDB';
+const url = process.env.MONGODB_URI;
+console.log('MongoDB URI loaded:', !!url);
 
 const client = new MongoClient(url);
 client.connect();
