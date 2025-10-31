@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
 
+const app_name = 'FormaTrack.xyz';
+function buildPath(route: string): string
+{
+  if (import.meta.env.MODE != 'development')
+  {
+    return 'http://' + app_name + ':5000/' + route;
+  }
+  else
+  {
+    return 'http://localhost:5000/' + route;
+  }
+}
+
 function CardUI()
 {
     // --- Teacher variables (get logged-in user) ---
@@ -9,7 +22,7 @@ function CardUI()
 
     // --- React state ---
     const [message, setMessage] = useState('');
-    const [searchResults, setResults] = useState('');
+    //const [searchResults, setResults] = useState('');
     const [cardList, setCardList] = useState('');
     const [search, setSearchValue] = React.useState('');
     const [card, setCardNameValue] = React.useState('');
@@ -24,7 +37,7 @@ function CardUI()
 
         try
         {
-            const response = await fetch('http://localhost:5000/api/addcard',
+            const response = await fetch(buildPath('api/addcard'),
                 { method: 'POST', body: js, headers: { 'Content-Type': 'application/json' } });
 
             let txt = await response.text();
@@ -55,7 +68,7 @@ function CardUI()
 
         try
         {
-            const response = await fetch('http://localhost:5000/api/searchcards',
+            const response = await fetch(buildPath('api/searchcards'),
                 { method: 'POST', body: js, headers: { 'Content-Type': 'application/json' } });
 
             let txt = await response.text();
@@ -70,13 +83,15 @@ function CardUI()
                     resultText += ', ';
                 }
             }
-            setResults('Card(s) have been retrieved');
+            //setResults('Card(s) have been retrieved');
+            setMessage('Card(s) have been retrieved');
             setCardList(resultText);
         }
         catch (error: any)
         {
             alert(error.toString());
-            setResults(error.toString());
+            //setResults(error.toString());
+            setMessage(error.toString());
         }
     };
 

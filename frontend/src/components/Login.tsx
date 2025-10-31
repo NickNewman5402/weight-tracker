@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
 
+const app_name = 'FormaTrack.xyz';
+function buildPath(route: string): string
+{
+  if (import.meta.env.MODE != 'development')
+  {
+    return 'http://' + app_name + ':5000/' + route;
+  }
+  else
+  {
+    return 'http://localhost:5000/' + route;
+  }
+}
 
 function Login()
 {
@@ -17,7 +29,7 @@ function Login()
 
     try
     {
-      const response = await fetch('http://localhost:5000/api/login',
+      const response = await fetch(buildPath('api/login'),
         {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
 
       var res = JSON.parse(await response.text());
