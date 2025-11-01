@@ -1,147 +1,114 @@
 import React, { useState } from 'react';
-
-const app_name = 'FormaTrack.xyz';
-function buildPath(route: string): string
-{
-  if (import.meta.env.MODE != 'development')
-  {
-    return 'http://' + app_name + ':5000/' + route;
-  }
-  else
-  {
-    return 'http://localhost:5000/' + route;
-  }
-}
+import { buildPath } from './Path';
+import { retrieveToken, storeToken } from '../tokenStorage';
 
 function CardUI()
 {
-    // --- Teacher variables (get logged-in user) ---
-    let _ud: any = localStorage.getItem('user_data');
-    let ud = JSON.parse(_ud);
-    let userId: string = ud.id;
 
-    // --- React state ---
-    const [message, setMessage] = useState('');
-    //const [searchResults, setResults] = useState('');
-    const [cardList, setCardList] = useState('');
-    const [search, setSearchValue] = React.useState('');
-    const [card, setCardNameValue] = React.useState('');
-
-    // --- Add card to backend ---
-    async function addCard(e:any): Promise<void>
+    const [message,setMessage] = useState('');
+    const [searchResults,setResults] = useState('');
+    const [cardList,setCardList] = useState('');
+    const [search,setSearchValue] = React.useState('');
+    const [card,setCardNameValue] = React.useState('');
+    
+    var _ud = localStorage.getItem('user_data');
+    var ud = JSON.parse(String(_ud));
+    var userId = ud.id;
+//    var firstName = ud.firstName;
+//    var lastName = ud.lastName;
+    
+    async function addCard(e:any) : Promise<void>
     {
         e.preventDefault();
 
-        let obj = { userId: userId, card: card };
-        let js = JSON.stringify(obj);
+        var obj = {userId:userId,card:card,jwtToken:retrieveToken()};
+        var js = JSON.stringify(obj);
 
         try
         {
             const response = await fetch(buildPath('api/addcard'),
-                { method: 'POST', body: js, headers: { 'Content-Type': 'application/json' } });
+            {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
 
             let txt = await response.text();
             let res = JSON.parse(txt);
 
-            if (res.error.length > 0)
+            if( res.error.length > 0 )
             {
-                setMessage("API Error: " + res.error);
+                setMessage( "API Error:" + res.error );
             }
             else
             {
                 setMessage('Card has been added');
+                storeToken( res.jwtToken );             
             }
         }
-        catch (error: any)
+        catch(error:any)
         {
             setMessage(error.toString());
         }
     };
 
-    // --- Search cards from backend ---
-    async function searchCard(e:any): Promise<void>
+    async function searchCard(e:any) : Promise<void>
     {
         e.preventDefault();
-
-        let obj = { userId: userId, search: search };
-        let js = JSON.stringify(obj);
+        
+        var obj = {userId:userId,search:search,jwtToken:retrieveToken()};
+        var js = JSON.stringify(obj);
 
         try
         {
             const response = await fetch(buildPath('api/searchcards'),
-                { method: 'POST', body: js, headers: { 'Content-Type': 'application/json' } });
+            {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
 
             let txt = await response.text();
             let res = JSON.parse(txt);
             let _results = res.results;
             let resultText = '';
-            for (let i = 0; i < _results.length; i++)
+            for( let i=0; i<_results.length; i++ )
             {
                 resultText += _results[i];
-                if (i < _results.length - 1)
+                if( i < _results.length - 1 )
                 {
                     resultText += ', ';
                 }
             }
-            //setResults('Card(s) have been retrieved');
-            setMessage('Card(s) have been retrieved');
+            setResults('Card(s) have been retrieved');
+            storeToken( res.jwtToken );
             setCardList(resultText);
         }
-        catch (error: any)
+        catch(error:any)
         {
             alert(error.toString());
-            //setResults(error.toString());
-            setMessage(error.toString());
+            setResults(error.toString());
         }
     };
 
-    return (
-        <div id="cardUIDiv">
-            <h1>COP 4331 MERN Stack Demo</h1>
-            <p>Logged In As {ud.firstName} {ud.lastName}</p>
+    function handleSearchTextChange( e: any ) : void
+    {
+        setSearchValue( e.target.value );
+    }
 
-            <input
-                type="submit"
-                id="logoutButton"
-                className="buttons"
-                value="Log Out"
-                onClick={() => { localStorage.removeItem('user_data'); window.location.href = '/'; }}
-            /><br /><br />
+    function handleCardTextChange( e: any ) : void
+    {
+        setCardNameValue( e.target.value );
+    }
 
-            Card To Search For:
-            <input
-                type="text"
-                id="searchText"
-                placeholder="Card To Search For"
-                onChange={(e) => setSearchValue(e.target.value)}
-            />
-            <input
-                type="submit"
-                id="searchCardButton"
-                className="buttons"
-                value="Search Card"
-                onClick={searchCard}
-            /><br /><br />
-
-            Card To Add:
-            <input
-                type="text"
-                id="addText"
-                placeholder="Card To Add"
-                onChange={(e) => setCardNameValue(e.target.value)}
-            />
-            <input
-                type="submit"
-                id="addCardButton"
-                className="buttons"
-                value="Add Card"
-                onClick={addCard}
-            /><br /><br />
-
-            <span id="cardResult">{message}</span><br/>
-            <span id="cardList">{cardList}</span>
-        </div>
-    );
+    return(
+<div id="cardUIDiv">
+  <br />
+  Search: <input type="text" id="searchText" placeholder="Card To Search For" 
+    onChange={handleSearchTextChange} />
+  <button type="button" id="searchCardButton" className="buttons" 
+    onClick={searchCard}> Search Card</button><br />
+  <span id="cardSearchResult">{searchResults}</span>
+  <p id="cardList">{cardList}</p><br /><br />
+  Add: <input type="text" id="cardText" placeholder="Card To Add" 
+    onChange={handleCardTextChange} />
+  <button type="button" id="addCardButton" className="buttons" 
+    onClick={addCard}> Add Card </button><br />
+  <span id="cardAddResult">{message}</span>
+</div>
+   );
 }
 
 export default CardUI;

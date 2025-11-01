@@ -1,96 +1,88 @@
 import React, { useState } from 'react';
-
-const app_name = 'FormaTrack.xyz';
-function buildPath(route: string): string
-{
-  if (import.meta.env.MODE != 'development')
-  {
-    return 'http://' + app_name + ':5000/' + route;
-  }
-  else
-  {
-    return 'http://localhost:5000/' + route;
-  }
-}
+import { buildPath } from './Path';
+import { storeToken } from '../tokenStorage';
+import { jwtDecode } from 'jwt-decode';
 
 function Login()
 {
-  const [message, setMessage] = useState('');
-  const [loginName, setLoginName] = useState('');
-  const [loginPassword, setPassword] = useState('');
 
-  // --- Teacher's exact function ---
-  async function doLogin(event:any) : Promise<void>
-  {
-    event.preventDefault();
+  const [message,setMessage] = useState('');
+  const [loginName,setLoginName] = React.useState('');
+  const [loginPassword,setPassword] = React.useState('');
 
-    var obj = {login:loginName,password:loginPassword};
-    var js = JSON.stringify(obj);
-
-    try
+    async function doLogin(event:any) : Promise<void>
     {
-      const response = await fetch(buildPath('api/login'),
-        {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
+        event.preventDefault();
 
-      var res = JSON.parse(await response.text());
+        var obj = {login:loginName,password:loginPassword};
+        var js = JSON.stringify(obj);
 
-      if( res.id <= 0 )
-      {
-        setMessage('User/Password combination incorrect');
-      }
-      else
-      {
-        var user = {firstName:res.firstName,lastName:res.lastName,id:res.id}
-        localStorage.setItem('user_data', JSON.stringify(user));
+        try
+        {    
+            const response = await fetch(buildPath('api/login'),
+                {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
+  
+            var res = JSON.parse(await response.text());
+  
+        const { jwtToken } = res;
+        storeToken( res );
+        const decoded: any = jwtDecode(jwtToken);
 
-        setMessage('');
-        window.location.href = '/cards';
-      }
-    }
-    catch(error:any)
+        try
+        {
+          var ud = decoded;
+          var userId = ud.userId;
+          var firstName = ud.firstName;
+          var lastName = ud.lastName;
+
+          if( userId <= 0 )
+          {
+            setMessage('User/Password combination incorrect');
+          }
+          else
+          {
+            var user = {firstName:firstName,lastName:lastName,id:userId}
+            localStorage.setItem('user_data', JSON.stringify(user));
+      
+            setMessage('');
+            window.location.href = '/cards';
+          }
+          }
+          catch(e)
+          {
+            console.log( e );
+            return;
+          }
+        }
+        catch(error:any)
+        {
+            alert(error.toString());
+            return;
+        }    
+      };
+
+    function handleSetLoginName( e: any ) : void
     {
-      alert(error.toString());
-      return;
+      setLoginName( e.target.value );
     }
-  };
-  // --- end teacher function ---
 
-  function handleSetLoginName(e: React.ChangeEvent<HTMLInputElement>)
-  {
-    setLoginName(e.target.value);
-  }
+    function handleSetPassword( e: any ) : void
+    {
+      setPassword( e.target.value );
+    }
 
-  function handleSetPassword(e: React.ChangeEvent<HTMLInputElement>)
-  {
-    setPassword(e.target.value);
-  }
-
-  return (
-    <div id="loginDiv">
-      <span id="inner-title">PLEASE LOG IN</span><br />
-      <form onSubmit={doLogin}>
-        Username: <input
-          type="text"
-          id="loginName"
-          placeholder="Username"
-          onChange={handleSetLoginName}
-        /><br />
-        Password: <input
-          type="password"
-          id="loginPassword"
-          placeholder="Password"
-          onChange={handleSetPassword}
-        /><br />
-        <input
-          type="submit"
-          id="loginButton"
-          className="buttons"
-          value="Do It"
-        />
-      </form>
-      <span id="loginResult">{message}</span>
-    </div>
-  );
-}
+    return(
+      <div id="loginDiv">
+        <span id="inner-title">PLEASE LOG IN</span><br />
+        Login: <input type="text" id="loginName" placeholder="Username" 
+          onChange={handleSetLoginName} /><br />
+        Password: <input type="password" id="loginPassword" placeholder="Password" 
+          onChange={handleSetPassword} />
+        <input type="submit" id="loginButton" className="buttons" value = "Do It"
+          onClick={doLogin} />
+        <span id="loginResult">{message}</span>
+     </div>
+    );
+};
 
 export default Login;
