@@ -1,191 +1,179 @@
-require('express');
-require('mongodb');
 const token = require('./createJWT.js');
 
-exports.setApp = function ( app, client )
+// Load Mongoose models
+const User = require('./models/user.js');
+const Card = require('./models/card.js');
+
+exports.setApp = function (app, mongoose) 
 {
 
-	app.post('/api/addcard', async (req, res, next) =>
+  // -------------------------
+  // /api/addcard
+  // -------------------------
+  app.post('/api/addcard', async (req, res) => 
+            {
+                // incoming: userId, card, jwtToken
+                // outgoing: error, jwtToken (refreshed)
+                const { userId, card, jwtToken } = req.body;
+
+                try 
                 {
-                    // incoming: userId, card, jwtToken
-                    // outgoing: error, jwtToken
-
-                    const { userId, card, jwtToken } = req.body;
-
-                    try
+                    if (token.isExpired(jwtToken)) 
                     {
-                        if (token.isExpired(jwtToken))
-                        {
-                            var r = { error: 'The JWT is no longer valid', jwtToken: '' };
-                            res.status(200).json(r);
-                            return;
-                        }
+                        return res.status(200).json({ error: 'The JWT is no longer valid', jwtToken: '' });
                     }
-
-                    catch (e)
-                    {
-                        console.log(e.message);
-                    }
-
-                    const newCard = { Card: card, UserId: userId };
-                    var error = '';
-
-                    try
-                    {
-                        const db = client.db('COP4331Cards');
-                        const result = db.collection('Cards').insertOne(newCard);
-                    }
-
-                    catch (e)
-                    {
-                        error = e.toString();
-                    }
-
-                    var refreshedToken = null;
-
-                    try
-                    {
-                        refreshedToken = token.refresh(jwtToken);
-                    }
-
-                    catch (e)
-                    {
-                        console.log(e.message);
-                    }
-
-                    var ret = { error: error, jwtToken: refreshedToken };
-                    res.status(200).json(ret);
-
-                }
-            );
-
-
-
-
-
-
-    app.post('/api/searchcards', async (req, res, next) =>
+                } 
+                
+                catch (e) 
                 {
-                    // incoming: userId, search, jwtToken
-                    // outgoing: results[], error, jwtToken
-
-                    var error = '';
-                    const { userId, search, jwtToken } = req.body;
-
-                    try
-                    {
-                        if (token.isExpired(jwtToken))
-                        {
-                            var r = { error: 'The JWT is no longer valid', jwtToken: '' };
-                            res.status(200).json(r);
-                            return;
-                        }
-                    }
-
-                    catch (e)
-                    {
-                        console.log(e.message);
-                    }
-
-                    var _search = search.trim();
-
-                    const db = client.db('COP4331Cards');
-
-                    const results = await db.collection('Cards')
-                        .find({ "Card": { $regex: _search + '.*', $options: 'i' } })
-                        .toArray();
-
-                    var _ret = [];
-
-                    for (var i = 0; i < results.length; i++)
-                    {
-                        _ret.push(results[i].Card);
-                    }
-
-                    var refreshedToken = null;
-                    try
-                    {
-                        refreshedToken = token.refresh(jwtToken);
-                    }
-
-                    catch (e)
-                    {
-                        console.log(e.message);
-                    }
-
-                    var ret = { results: _ret, error: error, jwtToken: refreshedToken };
-                    res.status(200).json(ret);
-
+                    console.log(e.message);
+                    // continue; we’ll still try to process (or you can early return if preferred)
                 }
-            );
+
+                let error = '';
+
+                try 
+                {
+                    const newCard = new Card({ Card: card, UserId: userId });
+                    await newCard.save(); // Mongoose insert
+                } 
+                
+                catch (e) 
+                {
+                    error = e.toString();
+                }
+
+                let refreshedToken = null;
+                
+                try 
+                {
+                    refreshedToken = token.refresh(jwtToken);
+                } 
+                
+                catch (e) 
+                {
+                    console.log(e.message);
+                }
+
+                res.status(200).json({ error, jwtToken: refreshedToken });
+
+            }
+        );
 
 
 
-	app.post('/api/login', async (req, res, next) => 
-    {
-      // incoming: login, password
-      // outgoing: id, firstName, lastName, error
+  // -------------------------
+  // /api/searchcards
+  // (keep only ONE version of this route)
+  // -------------------------
+  app.post('/api/searchcards', async (req, res) => 
+            {
+                // incoming: userId, search, jwtToken
+                // outgoing: results[], error, jwtToken (refreshed)
+                let error = '';
+                const { userId, search, jwtToken } = req.body;
+
+                try 
+                {
+                    if (token.isExpired(jwtToken)) 
+                    {
+                        return res.status(200).json({ error: 'The JWT is no longer valid', jwtToken: '' });
+                    }
+                } 
+                
+                catch (e) 
+                {
+                    console.log(e.message);
+                    // continue
+                }
+
+                const _search = (search || '').trim();
+
+                let list = [];
+                
+                try 
+                {
+                    //  Mongoose find (starts-with, case-insensitive)
+                    const results = await Card.find({
+                        Card: { $regex: '^' + _search, $options: 'i' }
+                    });
+
+                    // Return just the string values
+                    list = results.map(r => r.Card);
+                } 
+                
+                catch (e) 
+                {
+                    error = e.toString();
+                }
+
+                let refreshedToken = null;
+
+                try 
+                {
+                    refreshedToken = token.refresh(jwtToken);
+                } 
+                
+                catch (e) 
+                {
+                    console.log(e.message);
+                }
+
+                res.status(200).json({ results: list, error, jwtToken: refreshedToken });
+
+            }
+        );
+
         
-     var error = '';
+  // -------------------------
+  // /api/login
+  // -------------------------
+  app.post('/api/login', async (req, res) => 
+            {
+                // incoming: login, password
+                // outgoing: token OR error
+                let ret;
 
-      const { login, password } = req.body;
+                try 
+                {
+                    const { login, password } = req.body;
 
-      const db = client.db('COP4331Cards');
-      const results = await db.collection('Users').find({Login:login,Password:password}).toArray();
+                    // Mongoose find
+                    const results = await User.find({ Login: login, Password: password });
 
-      var id = -1;
-      var fn = '';
-      var ln = '';
+                    if (results.length > 0) 
+                    {
+                        const id = results[0].UserID;
+                        const fn = results[0].FirstName;
+                        const ln = results[0].LastName;
 
-      var ret;
-    
-      if( results.length > 0 )
-      {
-        id = results[0].UserId;
-        fn = results[0].FirstName;
-        ln = results[0].LastName;
+                        try 
+                        {
+                            const jwt = require('./createJWT.js');
+                            ret = jwt.createToken(fn, ln, id);
+                        } 
+                        
+                        catch (e) 
+                        {
+                            ret = { error: e.message };
+                        }
+                    } 
+                    
 
-        try
-        {
-          const token = require("./createJWT.js");
-          ret = token.createToken( fn, ln, id );
-        }
-        catch(e)
-        {
-          ret = {error:e.message};
-        }
-      }
-      else
-      {
-          ret = {error:"Login/Password incorrect"};
-      }
-    
-      res.status(200).json(ret);
-    });
+                    else 
+                    {
+                        ret = { error: 'Login/Password incorrect' };
+                    }
 
+                } 
+                
+                catch (e) 
+                {
+                    ret = { error: e.toString() };
+                }
 
-	app.post('/api/searchcards', async (req, res, next) => 
-	{
-	  // incoming: userId, search
-	  // outgoing: results[], error
-
-	  var error = '';
-
-	  const { userId, search } = req.body;
-
-	  var _search = search.trim();
-	  
-	  const db = client.db('COP4331Cards');
-	  const results = await db.collection('Cards').find({"Card":{$regex:_search+'.*', $options:'i'}}).toArray();
-	  
-	  var _ret = [];
-	  for( var i=0; i<results.length; i++ )
-	  {
-		_ret.push( results[i].Card );
-	  }
-	  
-	  var ret = {results:_ret, error:error};
-	  res.status(200).json(ret);
-	});
-    
-}
+                res.status(200).json(ret);
+                
+            }
+        );
+};

@@ -1,159 +1,166 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const MongoClient = require('mongodb').MongoClient;
-var api = require('./api.js');
-//require('.env').config();
-
+const mongoose = require('mongoose');     // use Mongoose instead of MongoClient
+const api = require('./api.js');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Connect with Mongoose
 const url = process.env.MONGODB_URI;
 console.log('MongoDB URI loaded:', !!url);
-const client = new MongoClient(process.env.MONGODB_URI);
+
+mongoose.connect(url)
+  .then(() => {
+    console.log('✅ Mongoose connected');
+    console.log('DB name:', mongoose.connection.name);
+    console.log('Host:', mongoose.connection.host);
+    const User = require('./models/user');
+    const Card = require('./models/card');
+    console.log('User model collection:', User.collection.name);
+    console.log('Card  model collection:', Card.collection.name);
+    User.estimatedDocumentCount().then(c => console.log('Users count:', c)).catch(console.error);
+    Card.estimatedDocumentCount().then(c => console.log('Cards count:', c)).catch(console.error);
+    mongoose.connection.db.listCollections().toArray()
+    .then(cols => console.log('Collections in DB:', cols.map(c => c.name)))
+    .catch(err => console.error('listCollections error:', err));
+  })
+  .catch(err => console.log('Mongo connect error:', err));
 
 
-//const url = 'mongodb+srv://nnewman:UCF$um2020@weight-trackerdb.idigxij.mongodb.net/?appName=weight-trackerDB';
 
-//const client = new MongoClient(url);
-client.connect();
-api.setApp( app, client );
-
+  
+// Pass mongoose to API wiring
+api.setApp(app, mongoose);
 
 
-app.use((req, res, next) =>
-    {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        
-        res.setHeader(
-            'Access-Control-Allow-Headers',
-            'Origin, X-Requested-With, Content-Type, Accept, Authorization'
-        );
-        
-        res.setHeader(
-            'Access-Control-Allow-Methods',
-            'GET, POST, PATCH, DELETE, OPTIONS'
-        );
-                    
-        next();
+app.use((req, res, next) => 
+            {
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader(
+                    'Access-Control-Allow-Headers',
+                    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+                );
+                res.setHeader(
+                    'Access-Control-Allow-Methods',
+                    'GET, POST, PATCH, DELETE, OPTIONS'
+                );
+                next();
+                
             }
         );
         
-        // const PORT = process.env.PORT || 5000;
-        // app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-        app.listen(5000, () => console.log('Server running on port 5000')); 
+        app.listen(5000, () => console.log('Server running on port 5000'));
         
-
         
-
-        var cardList = 
-        [
-            'Roy Campanella',
-            'Paul Molitor',
-            'Tony Gwynn',
-            'Dennis Eckersley',
-            'Reggie Jackson',
-            'Gaylord Perry',
-            'Buck Leonard',
-            'Rollie Fingers',
-            'Charlie Gehringer',
-            'Wade Boggs',
-            'Carl Hubbell',
-            'Dave Winfield',
-            'Jackie Robinson',
-            'Ken Griffey, Jr.',
-            'Al Simmons',
-            'Chuck Klein',
-            'Mel Ott',
-            'Mark McGwire',
-            'Nolan Ryan',
-            'Ralph Kiner',
-            'Yogi Berra',
-            'Goose Goslin',
-            'Greg Maddux',
-            'Frankie Frisch',
-            'Ernie Banks',
-            'Ozzie Smith',
-            'Hank Greenberg',
-            'Kirby Puckett',
-            'Bob Feller',
-            'Dizzy Dean',
-            'Joe Jackson',
-            'Sam Crawford',
-            'Barry Bonds',
-            'Duke Snider',
-            'George Sisler',
-            'Ed Walsh',
-            'Tom Seaver',
-            'Willie Stargell',
-            'Bob Gibson',
-            'Brooks Robinson',
-            'Steve Carlton',
-            'Joe Medwick',
-            'Nap Lajoie',
-            'Cal Ripken, Jr.',
-            'Mike Schmidt',
-            'Eddie Murray',
-            'Tris Speaker',
-            'Al Kaline',
-            'Sandy Koufax',
-            'Willie Keeler',
-            'Pete Rose',
-            'Robin Roberts',
-            'Eddie Collins',
-            'Lefty Gomez',
-            'Lefty Grove',
-            'Carl Yastrzemski',
-            'Frank Robinson',
-            'Juan Marichal',
-            'Warren Spahn',
-            'Pie Traynor',
-            'Roberto Clemente',
-            'Harmon Killebrew',
-            'Satchel Paige',
-            'Eddie Plank',
-            'Josh Gibson',
-            'Oscar Charleston',
-            'Mickey Mantle',
-            'Cool Papa Bell',
-            'Johnny Bench',
-            'Mickey Cochrane',
-            'Jimmie Foxx',
-            'Jim Palmer',
-            'Cy Young',
-            'Eddie Mathews',
-            'Honus Wagner',
-            'Paul Waner',
-            'Grover Alexander',
-            'Rod Carew',
-            'Joe DiMaggio',
-            'Joe Morgan',
-            'Stan Musial',
-            'Bill Terry',
-            'Rogers Hornsby',
-            'Lou Brock',
-            'Ted Williams',
-            'Bill Dickey',
-            'Christy Mathewson',
-            'Willie McCovey',
-            'Lou Gehrig',
-            'George Brett',
-            'Hank Aaron',
-            'Harry Heilmann',
-            'Walter Johnson',
-            'Roger Clemens',
-            'Ty Cobb',
-            'Whitey Ford',
-            'Willie Mays',
-            'Rickey Henderson',
-            'Babe Ruth'
-            ];
-
 /***************************************************************************************************************************************************/
+
 //                                                          APIs MOVED TO api.js
+        // var cardList = 
+        // [
+        //     'Roy Campanella',
+        //     'Paul Molitor',
+        //     'Tony Gwynn',
+        //     'Dennis Eckersley',
+        //     'Reggie Jackson',
+        //     'Gaylord Perry',
+        //     'Buck Leonard',
+        //     'Rollie Fingers',
+        //     'Charlie Gehringer',
+        //     'Wade Boggs',
+        //     'Carl Hubbell',
+        //     'Dave Winfield',
+        //     'Jackie Robinson',
+        //     'Ken Griffey, Jr.',
+        //     'Al Simmons',
+        //     'Chuck Klein',
+        //     'Mel Ott',
+        //     'Mark McGwire',
+        //     'Nolan Ryan',
+        //     'Ralph Kiner',
+        //     'Yogi Berra',
+        //     'Goose Goslin',
+        //     'Greg Maddux',
+        //     'Frankie Frisch',
+        //     'Ernie Banks',
+        //     'Ozzie Smith',
+        //     'Hank Greenberg',
+        //     'Kirby Puckett',
+        //     'Bob Feller',
+        //     'Dizzy Dean',
+        //     'Joe Jackson',
+        //     'Sam Crawford',
+        //     'Barry Bonds',
+        //     'Duke Snider',
+        //     'George Sisler',
+        //     'Ed Walsh',
+        //     'Tom Seaver',
+        //     'Willie Stargell',
+        //     'Bob Gibson',
+        //     'Brooks Robinson',
+        //     'Steve Carlton',
+        //     'Joe Medwick',
+        //     'Nap Lajoie',
+        //     'Cal Ripken, Jr.',
+        //     'Mike Schmidt',
+        //     'Eddie Murray',
+        //     'Tris Speaker',
+        //     'Al Kaline',
+        //     'Sandy Koufax',
+        //     'Willie Keeler',
+        //     'Pete Rose',
+        //     'Robin Roberts',
+        //     'Eddie Collins',
+        //     'Lefty Gomez',
+        //     'Lefty Grove',
+        //     'Carl Yastrzemski',
+        //     'Frank Robinson',
+        //     'Juan Marichal',
+        //     'Warren Spahn',
+        //     'Pie Traynor',
+        //     'Roberto Clemente',
+        //     'Harmon Killebrew',
+        //     'Satchel Paige',
+        //     'Eddie Plank',
+        //     'Josh Gibson',
+        //     'Oscar Charleston',
+        //     'Mickey Mantle',
+        //     'Cool Papa Bell',
+        //     'Johnny Bench',
+        //     'Mickey Cochrane',
+        //     'Jimmie Foxx',
+        //     'Jim Palmer',
+        //     'Cy Young',
+        //     'Eddie Mathews',
+        //     'Honus Wagner',
+        //     'Paul Waner',
+        //     'Grover Alexander',
+        //     'Rod Carew',
+        //     'Joe DiMaggio',
+        //     'Joe Morgan',
+        //     'Stan Musial',
+        //     'Bill Terry',
+        //     'Rogers Hornsby',
+        //     'Lou Brock',
+        //     'Ted Williams',
+        //     'Bill Dickey',
+        //     'Christy Mathewson',
+        //     'Willie McCovey',
+        //     'Lou Gehrig',
+        //     'George Brett',
+        //     'Hank Aaron',
+        //     'Harry Heilmann',
+        //     'Walter Johnson',
+        //     'Roger Clemens',
+        //     'Ty Cobb',
+        //     'Whitey Ford',
+        //     'Willie Mays',
+        //     'Rickey Henderson',
+        //     'Babe Ruth'
+        //     ];
+
 
 // app.post('/api/login', async (req, res, next) => 
     //             {
