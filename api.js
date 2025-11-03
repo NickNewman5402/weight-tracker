@@ -64,7 +64,6 @@ exports.setApp = function (app, mongoose)
 
   // -------------------------
   // /api/searchcards
-  // (keep only ONE version of this route)
   // -------------------------
   app.post('/api/searchcards', async (req, res) => 
             {
