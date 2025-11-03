@@ -8,6 +8,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// (optional) health
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+
+
+
+
 // Connect with Mongoose
 const url = process.env.MONGODB_URI;
 console.log('MongoDB URI loaded:', !!url);
