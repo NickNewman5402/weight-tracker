@@ -4,10 +4,6 @@ const token = require('./createJWT.js');
 const User = require('./models/user.js');
 const Card = require('./models/card.js');
 
-// Simple health-check route
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
-});
 
 exports.setApp = function (app, mongoose) 
 {
