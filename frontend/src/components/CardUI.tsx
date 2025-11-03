@@ -1,114 +1,135 @@
 import React, { useState } from 'react';
-import { buildPath } from './Path';
-import { retrieveToken, storeToken } from '../tokenStorage';
+
+const app_name = 'FormaTrack.xyz';
+function buildPath(route: string): string
+{
+  if (import.meta.env.MODE != 'development')
+  {
+    return 'http://' + app_name + ':5000/' + route;
+  }
+  else
+  {
+    return 'http://localhost:5000/' + route;
+  }
+}
 
 function CardUI()
 {
+    // --- Teacher variables (get logged-in user) ---
+    let _ud: any = localStorage.getItem('user_data');
+    let ud = JSON.parse(_ud);
+    let userId: string = ud.id;
 
-    const [message,setMessage] = useState('');
-    const [searchResults,setResults] = useState('');
-    const [cardList,setCardList] = useState('');
-    const [search,setSearchValue] = React.useState('');
-    const [card,setCardNameValue] = React.useState('');
-    
-    var _ud = localStorage.getItem('user_data');
-    var ud = JSON.parse(String(_ud));
-    var userId = ud.id;
-//    var firstName = ud.firstName;
-//    var lastName = ud.lastName;
-    
-    async function addCard(e:any) : Promise<void>
-    {
-        e.preventDefault();
+    // --- React state ---
+    const [message, setMessage] = useState('');
+    //const [searchResults, setResults] = useState('');
+    const [cardList, setCardList] = useState('');
+    const [search, setSearchValue] = React.useState('');
+    const [card, setCardNameValue] = React.useState('');
 
-        var obj = {userId:userId,card:card,jwtToken:retrieveToken()};
-        var js = JSON.stringify(obj);
 
-        try
-        {
-            const response = await fetch(buildPath('api/addcard'),
-            {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
+    const getToken = () => localStorage.getItem('token_data') || '';
+    const saveToken = (t?: string) => { if (t) localStorage.setItem('token_data', t); };
 
-            let txt = await response.text();
-            let res = JSON.parse(txt);
+    // --- Add card to backend ---
+    async function addCard(e: any): Promise<void> {
+  e.preventDefault();
 
-            if( res.error.length > 0 )
-            {
-                setMessage( "API Error:" + res.error );
-            }
-            else
-            {
-                setMessage('Card has been added');
-                storeToken( res.jwtToken );             
-            }
-        }
-        catch(error:any)
-        {
-            setMessage(error.toString());
-        }
-    };
+  const body = { userId, card, jwtToken: getToken() }; // include jwtToken
 
-    async function searchCard(e:any) : Promise<void>
-    {
-        e.preventDefault();
-        
-        var obj = {userId:userId,search:search,jwtToken:retrieveToken()};
-        var js = JSON.stringify(obj);
+  try {
+    const response = await fetch(buildPath('api/addcard'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-        try
-        {
-            const response = await fetch(buildPath('api/searchcards'),
-            {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
+    const res = await response.json();
 
-            let txt = await response.text();
-            let res = JSON.parse(txt);
-            let _results = res.results;
-            let resultText = '';
-            for( let i=0; i<_results.length; i++ )
-            {
-                resultText += _results[i];
-                if( i < _results.length - 1 )
-                {
-                    resultText += ', ';
-                }
-            }
-            setResults('Card(s) have been retrieved');
-            storeToken( res.jwtToken );
-            setCardList(resultText);
-        }
-        catch(error:any)
-        {
-            alert(error.toString());
-            setResults(error.toString());
-        }
-    };
-
-    function handleSearchTextChange( e: any ) : void
-    {
-        setSearchValue( e.target.value );
+    if (!response.ok || res.error) {
+      setMessage('API Error: ' + (res.error || 'Add failed'));
+      return;
     }
 
-    function handleCardTextChange( e: any ) : void
-    {
-        setCardNameValue( e.target.value );
-    }
+    saveToken(res.jwtToken); // refresh token
+    setMessage('Card has been added');
+  } catch (error: any) {
+    setMessage(error.toString());
+  }
+};
 
-    return(
-<div id="cardUIDiv">
-  <br />
-  Search: <input type="text" id="searchText" placeholder="Card To Search For" 
-    onChange={handleSearchTextChange} />
-  <button type="button" id="searchCardButton" className="buttons" 
-    onClick={searchCard}> Search Card</button><br />
-  <span id="cardSearchResult">{searchResults}</span>
-  <p id="cardList">{cardList}</p><br /><br />
-  Add: <input type="text" id="cardText" placeholder="Card To Add" 
-    onChange={handleCardTextChange} />
-  <button type="button" id="addCardButton" className="buttons" 
-    onClick={addCard}> Add Card </button><br />
-  <span id="cardAddResult">{message}</span>
-</div>
-   );
+
+    // --- Search cards from backend ---
+    async function searchCard(e:any) {
+  e.preventDefault();
+
+  const body = { userId, search, jwtToken: getToken() }; // ← include token
+
+  const response = await fetch(buildPath('api/searchcards'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const res = await response.json();
+
+  if (!response.ok || res.error) {          // ← guard before touching results
+    setMessage('API Error: ' + (res.error || 'Search failed'));
+    return;
+  }
+
+  saveToken(res.jwtToken);                   // ← keep refreshed token
+  const results: string[] = Array.isArray(res.results) ? res.results : [];
+  setCardList(results.join(', '));
+  setMessage('Card(s) have been retrieved');
+};
+
+    return (
+        <div id="cardUIDiv">
+            <h1>COP 4331 MERN Stack Demo</h1>
+            <p>Logged In As {ud.firstName} {ud.lastName}</p>
+
+            <input
+                type="submit"
+                id="logoutButton"
+                className="buttons"
+                value="Log Out"
+                onClick={() => { localStorage.removeItem('user_data'); window.location.href = '/'; }}
+            /><br /><br />
+
+            Card To Search For:
+            <input
+                type="text"
+                id="searchText"
+                placeholder="Card To Search For"
+                onChange={(e) => setSearchValue(e.target.value)}
+            />
+            <input
+                type="submit"
+                id="searchCardButton"
+                className="buttons"
+                value="Search Card"
+                onClick={searchCard}
+            /><br /><br />
+
+            Card To Add:
+            <input
+                type="text"
+                id="addText"
+                placeholder="Card To Add"
+                onChange={(e) => setCardNameValue(e.target.value)}
+            />
+            <input
+                type="submit"
+                id="addCardButton"
+                className="buttons"
+                value="Add Card"
+                onClick={addCard}
+            /><br /><br />
+
+            <span id="cardResult">{message}</span><br/>
+            <span id="cardList">{cardList}</span>
+        </div>
+    );
 }
 
 export default CardUI;
