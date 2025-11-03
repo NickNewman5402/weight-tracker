@@ -6,16 +6,21 @@
 *
 **********************************************************************************************/
 // frontend/src/components/Path.ts
+const app_name = 'www.formatrack.xyz';
 
-const app_name = 'formatrack.xyz';
-
-export function buildPath(route: string): string {
-  // Local development (vite sets this automatically)
-  if (import.meta.env.MODE === 'development') {
-    return `http://localhost:5000/api/${route}`;
+// Add console logging to confirm during runtime
+function buildPath(route: string): string {
+  let path;
+  if (import.meta.env.MODE !== 'development') {
+    // Use HTTPS and no port in production
+    path = 'https://' + app_name + '/api/' + route;
+  } else {
+    // Local dev: keep the 5000 port
+    path = 'http://localhost:5000/api/' + route;
   }
 
-  // Production — use relative path so HTTPS stays valid
-  return `/api/${route}`;
+  console.log('🧭 buildPath:', path);
+  return path;
 }
 
+export default buildPath;

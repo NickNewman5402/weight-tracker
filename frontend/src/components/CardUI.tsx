@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
+import buildPath from './Path';
 
-const app_name = 'FormaTrack.xyz';
-function buildPath(route: string): string
-{
-  if (import.meta.env.MODE != 'development')
-  {
-    return 'http://' + app_name + ':5000/' + route;
-  }
-  else
-  {
-    return 'http://localhost:5000/' + route;
-  }
-}
+// const app_name = 'FormaTrack.xyz';
+// function buildPath(route: string): string
+// {
+//   if (import.meta.env.MODE != 'development')
+//   {
+//     return 'http://' + app_name + ':5000/' + route;
+//   }
+//   else
+//   {
+//     return 'http://localhost:5000/' + route;
+//   }
+// }
 
 function CardUI()
 {
@@ -38,7 +39,7 @@ function CardUI()
   const body = { userId, card, jwtToken: getToken() }; // include jwtToken
 
   try {
-    const response = await fetch(buildPath('api/addcard'), {
+    const response = await fetch(buildPath('addcard'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -65,7 +66,7 @@ function CardUI()
 
   const body = { userId, search, jwtToken: getToken() }; // ← include token
 
-  const response = await fetch(buildPath('api/searchcards'), {
+  const response = await fetch(buildPath('searchcards'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

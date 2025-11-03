@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { buildPath } from './Path';
-import { jwtDecode } from 'jwt-decode';
+import buildPath from './Path';
+
+//import { jwtDecode } from 'jwt-decode';
 
 function Login() {
   const [message, setMessage] = useState('');
@@ -14,7 +15,7 @@ function Login() {
     const js = JSON.stringify(obj);
 
     try {
-      const response = await fetch(buildPath('api/login'), {
+      const response = await fetch(buildPath('login'), {
         method: 'POST',
         body: js,
         headers: { 'Content-Type': 'application/json' },
