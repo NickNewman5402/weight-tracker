@@ -3,6 +3,7 @@ node_modules/
 frontend/node_modules/
 dist/
 frontend/dist/
+*./log
 
 # Environment files
 .env
@@ -15,3 +16,8 @@ yarn-error.log*
 
 # Build output
 .DS_Store
+
+# Build artifacts
+frontend/dist/
+frontend/node_modules/
+coverage/

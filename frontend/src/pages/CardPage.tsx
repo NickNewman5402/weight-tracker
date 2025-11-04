@@ -1,5 +1,5 @@
 import PageTitle from '../components/PageTitle';
-import LoggedInName from '../components/LoggedInName';
+//import LoggedInName from '../components/LoggedInName';
 import CardUI from '../components/CardUI';
 
 const CardPage = () =>
@@ -8,7 +8,7 @@ const CardPage = () =>
         return(
             <div>
             <PageTitle />
-            <LoggedInName />
+            {/* <LoggedInName /> */}
             <CardUI />
             </div>
         );

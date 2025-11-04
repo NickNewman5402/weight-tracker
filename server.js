@@ -52,6 +52,13 @@ app.use((req, res, next) =>
             }
         );
         
+
+        app.post('/api/register', (req, res) => {
+  const { firstName, lastName, login, email, password } = req.body;
+  console.log('Simulated registration:', { firstName, lastName, login, email, password });
+  return res.status(201).json({ message: 'Registered locally (demo mode)' });
+});
+
         app.listen(5000, () => console.log('Server running on port 5000'));
         
         

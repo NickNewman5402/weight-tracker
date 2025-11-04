@@ -3,21 +3,47 @@ import './App.css';
 
 import LoginPage from './pages/LoginPage';
 import CardPage from './pages/CardPage';
+import RegistrationPage from './pages/RegistrationPage';  
 
-
-function App() 
-  {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/cards" element={<CardPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/cards" element={<CardPage />} />
+        <Route path="/RegistrationPage" element={<RegistrationPage />} /> 
+      </Routes>
+    </BrowserRouter>
+  );
+}
 
 export default App;
+
+
+
+/**************************************WORKED WITH CARDS ALONE**********************************************************/
+
+
+// import { BrowserRouter, Routes, Route } from "react-router-dom";
+// import './App.css';
+
+// import LoginPage from './pages/LoginPage';
+// import CardPage from './pages/CardPage';
+
+
+// function App() 
+//   {
+//     return (
+//       <BrowserRouter>
+//         <Routes>
+//           <Route path="/" element={<LoginPage />} />
+//           <Route path="/cards" element={<CardPage />} />
+//         </Routes>
+//       </BrowserRouter>
+//     );
+//   }
+
+// export default App;
 
 //********************************************************************************************** */
 

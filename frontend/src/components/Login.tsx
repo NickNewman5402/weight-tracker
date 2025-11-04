@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import buildPath from './Path';
 
-//import { jwtDecode } from 'jwt-decode';
-
 function Login() {
   const [message, setMessage] = useState('');
   const [loginName, setLoginName] = React.useState('');
@@ -32,7 +30,6 @@ function Login() {
       const userId = res.id;
       const jwtToken = res.jwtToken;
 
-    
       const user = { firstName, lastName, id: userId };
       localStorage.setItem('user_data', JSON.stringify(user));
       localStorage.setItem('token_data', jwtToken);
@@ -63,13 +60,29 @@ function Login() {
         placeholder="Password"
         onChange={(e) => setPassword(e.target.value)}
       />
+      <br />
       <input
         type="submit"
         id="loginButton"
         className="buttons"
-        value="Do It"
+        value="Log In"
         onClick={doLogin}
       />
+      <br /><br />
+
+      {/* 🔹 Add these navigation options */}
+      <p style={{ marginTop: 8 }}>
+        Don’t have an account?{' '}
+        <a href="/RegistrationPage" style={{ textDecoration: 'none', color: '#0077cc' }}>
+          Register here
+        </a>
+      </p>
+      <p>
+        <a href="/forgot" style={{ textDecoration: 'none', color: '#0077cc' }}>
+          Forgot password?
+        </a>
+      </p>
+
       <span id="loginResult">{message}</span>
     </div>
   );
