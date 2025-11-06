@@ -2,8 +2,15 @@ name: Deploy FormaTrack
 
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+env:
+  APP_DIR: /var/www/formatrack
+  FRONTEND_DIST: /var/www/formatrack/frontend/dist
+  BACKEND_DIR: /var/www/formatrack/backend
+  PM2_APP: formatrack-api
+  NODE_VERSION: '22.18'
 
 jobs:
   deploy:
@@ -16,21 +23,21 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: "npm"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
-      # ---------- Frontend ----------
+      # ---------- FRONTEND ----------
       - name: Install frontend deps
-        working-directory: frontend
+        working-directory: ./frontend
         run: npm ci
 
       - name: Build frontend
-        working-directory: frontend
-        env:
-          NODE_ENV: production
+        working-directory: ./frontend
         run: npm run build
 
-      # Ensure target path exists (before SCP)
       - name: Ensure frontend target exists
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -39,10 +46,9 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            sudo mkdir -p /var/www/formatrack/frontend/dist
+            sudo mkdir -p "${{ env.FRONTEND_DIST }}"
 
-      # Copy the entire dist recursively
-      - name: Deploy frontend build to /var/www/formatrack/frontend/dist
+      - name: Upload frontend dist
         uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -50,56 +56,43 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           source: "frontend/dist/**"
-          target: "/var/www/formatrack/frontend/dist"
+          target: "${{ env.FRONTEND_DIST }}"
           rm: true
 
-
-      # ---------- Package backend (root) ----------
-      - name: Archive artifact
-        run: |
-          tar -czf formatrack.tgz \
-            frontend/dist \
-            package.json package-lock.json \
-            server.js api.js Card_server.js createJWT.js nodemon.json \
-            models
-
-      # ---------- Upload ----------
-      - name: Copy to server
-        uses: appleboy/scp-action@v0.1.7
+      # ---------- BACKEND ----------
+      - name: Ensure backend dir exists
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USER }}
-          port: ${{ secrets.DO_PORT }}
-          key: ${{ secrets.DO_SSH_KEY }}
-          source: "formatrack.tgz"
-          target: "/tmp/"
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            sudo mkdir -p "${{ env.BACKEND_DIR }}"
 
-      # ---------- Deploy ----------
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Upload backend files
+        uses: appleboy/scp-action@v0.1.5
         with:
-          host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USER }}
-          port: ${{ secrets.DO_PORT }}
-          key: ${{ secrets.DO_SSH_KEY }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "server.js,api.js,createJWT.js,package.json,package-lock.json,models/**"
+          target: "${{ env.BACKEND_DIR }}"
+          overwrite: true
+
+      - name: Install backend deps + restart PM2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
           script: |
             set -e
-            APP_DIR=${{ secrets.APP_DIR:-/var/www/formatrack }}
-            mkdir -p $APP_DIR
-            tar -xzf /tmp/formatrack.tgz -C $APP_DIR
-
-            cd $APP_DIR
+            cd "${{ env.BACKEND_DIR }}"
             npm ci --omit=dev
-
-            export NODE_ENV=production
-            export MONGODB_URI='${{ secrets.FORMATRACK_MONGODB_URI }}'
-            export ACCESS_TOKEN_SECRET='${{ secrets.FORMATRACK_JWT_SECRET }}'
-
-            [ -d $APP_DIR/frontend/dist ] || (echo "Missing frontend build" && exit 1)
-            [ -f $APP_DIR/server.js ] || (echo "Missing server.js in APP_DIR" && exit 1)
-
-            pm2 startOrReload $APP_DIR/ecosystem.config.cjs --only formatrack-api --update-env || \
-            pm2 start $APP_DIR/ecosystem.config.cjs --only formatrack-api --update-env
+            # start/reload PM2 app
+            pm2 reload "${{ env.PM2_APP }}" --update-env || pm2 start server.js --name "${{ env.PM2_APP }}"
             pm2 save
-
-            rm -f /tmp/formatrack.tgz
+            nginx -t && sudo systemctl reload nginx
