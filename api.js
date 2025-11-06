@@ -115,6 +115,11 @@ exports.setApp = function (app, mongoose)
   });
 
 
+    // -------------------------
+  // /api/health
+  // -------------------------
+
+  app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 
 
