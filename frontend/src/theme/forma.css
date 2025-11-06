@@ -1,0 +1,58 @@
+:root{
+  --gold:#f9d36b; --gold-soft:#e8c25b;
+  --bg-top:#111; --bg-bottom:#000;
+  --text:#e6e6e6; --muted:#9ea1a6;
+  --ring:rgba(249,211,107,.4);
+}
+
+body.ft-theme {
+  margin:0;
+  min-height:100svh;
+  background:radial-gradient(circle at 50% -10%,var(--bg-top) 0%,var(--bg-bottom) 60%);
+  color:var(--gold);
+  font-family:"Cinzel","Trajan Pro",ui-serif,Georgia,serif;
+  letter-spacing:.3px;
+  position:relative;
+}
+body.ft-theme::before{
+  content:""; position:fixed; inset:0; pointer-events:none;
+  background-image:url("https://www.transparenttextures.com/patterns/brushed-alum-dark.png");
+  opacity:.2; z-index:0;
+}
+
+/* shared bits */
+.ft-wrap{
+  position:relative; z-index:1;
+  padding: clamp(16px,3vw,28px);
+}
+.ft-header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; margin-bottom:18px;
+}
+.ft-title{
+  margin:0;
+  font-size:clamp(1.8rem,3vw,2.6rem);
+  text-shadow:0 0 22px rgba(255,223,0,.35), 0 0 38px rgba(255,215,0,.25);
+}
+.ft-sub{ color:var(--text); font:500 .95rem/1.4 "Segoe UI",Roboto,system-ui,-apple-system,sans-serif; opacity:.9 }
+
+.ft-card{
+  background:rgba(17,17,17,.6);
+  border:1px solid rgba(249,211,107,.2);
+  border-radius:18px;
+  box-shadow:0 20px 50px rgba(0,0,0,.45);
+  padding: clamp(14px,2.5vw,24px);
+  backdrop-filter: blur(6px);
+}
+
+.ft-btn{
+  appearance:none; cursor:pointer;
+  border:1px solid rgba(249,211,107,.7);
+  background:linear-gradient(180deg,#2a2210,#1b160a);
+  color:var(--gold);
+  font:700 .95rem/1 "Segoe UI",Roboto,system-ui,-apple-system,sans-serif;
+  padding:10px 14px; border-radius:12px; letter-spacing:.4px;
+  transition:transform 120ms ease, filter 150ms;
+  box-shadow:0 8px 24px rgba(249,211,107,.18);
+}
+.ft-btn:hover{ transform:translateY(-1px); filter:brightness(1.06) }

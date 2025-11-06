@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import buildPath from './Path';
+import { getStoredUser } from "../lib/auth";
 
 // const app_name = 'FormaTrack.xyz';
 // function buildPath(route: string): string
@@ -17,9 +18,20 @@ import buildPath from './Path';
 function CardUI()
 {
     // --- Teacher variables (get logged-in user) ---
-    let _ud: any = localStorage.getItem('user_data');
-    let ud = JSON.parse(_ud);
-    let userId: string = ud.id;
+    // let _ud: any = localStorage.getItem('user_data');
+    // let ud = JSON.parse(_ud);
+    // let userId: string = ud.id;
+    const user = getStoredUser();
+    const userId = user?.id ?? user?.userId; // supports both shapes
+
+
+    if (!userId) 
+    {
+      // Either redirect or show a message
+      // return <Navigate to="/" replace />;
+      return <div style={{ color: "#f9d36b", padding: 16 }}>Please sign in again.</div>;
+    }
+
 
     // --- React state ---
     const [message, setMessage] = useState('');
@@ -87,7 +99,7 @@ function CardUI()
     return (
         <div id="cardUIDiv">
             <h1>COP 4331 MERN Stack Demo</h1>
-            <p>Logged In As {ud.firstName} {ud.lastName}</p>
+            {/*<p>Logged In As {userId.firstName} {userId.lastName}</p>*/}
 
             <input
                 type="submit"

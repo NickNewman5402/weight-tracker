@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema(
     password:  { type: String, required: true }, // bcrypt hash
     emailVerified: { type: Boolean, default: false }
   },
-  { timestamps: true }
+  { timestamps: true, collection: 'Users' }
 );
 
 module.exports = mongoose.model('User', UserSchema);

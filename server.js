@@ -17,12 +17,6 @@ mongoose.connect(url)
     console.log('✅ Mongoose connected');
     console.log('DB name:', mongoose.connection.name);
     console.log('Host:', mongoose.connection.host);
-    const User = require('./models/user');
-    const Card = require('./models/card');
-    console.log('User model collection:', User.collection.name);
-    console.log('Card  model collection:', Card.collection.name);
-    User.estimatedDocumentCount().then(c => console.log('Users count:', c)).catch(console.error);
-    Card.estimatedDocumentCount().then(c => console.log('Cards count:', c)).catch(console.error);
     mongoose.connection.db.listCollections().toArray()
     .then(cols => console.log('Collections in DB:', cols.map(c => c.name)))
     .catch(err => console.error('listCollections error:', err));
@@ -53,11 +47,11 @@ app.use((req, res, next) =>
         );
         
 
-        app.post('/api/register', (req, res) => {
-  const { firstName, lastName, login, email, password } = req.body;
-  console.log('Simulated registration:', { firstName, lastName, login, email, password });
-  return res.status(201).json({ message: 'Registered locally (demo mode)' });
-});
+        //app.post('/api/register', (req, res) => {
+  //const { firstName, lastName, login, email, password } = req.body;
+//   console.log('Simulated registration:', { firstName, lastName, login, email, password });
+//   return res.status(201).json({ message: 'Registered locally (demo mode)' });
+// });
 
         app.listen(5000, () => console.log('Server running on port 5000'));
         

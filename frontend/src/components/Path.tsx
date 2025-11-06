@@ -9,18 +9,25 @@
 const app_name = 'www.formatrack.xyz';
 
 // Add console logging to confirm during runtime
-function buildPath(route: string): string {
+function buildPath(route: string): string 
+{
   let path;
-  if (import.meta.env.MODE !== 'development') {
+  
+  if (import.meta.env.MODE !== 'development') 
+  {
     // Use HTTPS and no port in production
     path = 'https://' + app_name + '/api/' + route;
-  } else {
+  } 
+  
+  else 
+  {
     // Local dev: keep the 5000 port
     path = 'http://localhost:5000/api/' + route;
   }
 
   console.log('🧭 buildPath:', path);
   return path;
+  
 }
 
 export default buildPath;
