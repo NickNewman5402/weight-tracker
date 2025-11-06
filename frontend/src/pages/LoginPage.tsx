@@ -18,10 +18,12 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
+
     if (!email || !password) {
       setMsg({ text: "Please enter both email and password.", type: "error" });
       return;
     }
+
     setBusy(true);
     try {
       const resp = await fetch(`${apiBase}/login`, {
@@ -29,22 +31,50 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login: email, password }),
       });
-      const raw = await resp.text();
+
+      // tolerate text or JSON
+      const ct = resp.headers.get("content-type") || "";
       let data: any = null;
-      try { data = JSON.parse(raw); } catch {}
+      if (ct.includes("application/json")) {
+        data = await resp.json().catch(() => null);
+      } else {
+        const raw = await resp.text();
+        try { data = JSON.parse(raw); } catch { data = { raw }; }
+      }
 
-      if (!resp.ok) throw new Error(data?.error || raw || `Login failed (${resp.status})`);
+      if (!resp.ok) {
+        const errMsg = data?.error || data?.message || `Login failed (${resp.status})`;
+        throw new Error(errMsg);
+      }
 
-      const { jwtToken, firstName, lastName, id } = data || {};
-      if (!jwtToken) throw new Error("No token returned from server.");
+      // normalize token + user fields
+      let token: any = data?.jwtToken || data?.token || data?.accessToken || "";
+      if (typeof token !== "string") token = String(token);
 
-      // persist
-      localStorage.setItem("jwtToken", jwtToken);
-      localStorage.setItem("user", JSON.stringify({ firstName, lastName, id, userId: id, email }));
+      const u = data?.user || data || {};
+      const uid: string = u.id || u._id || data?.id || data?._id || "";
 
-      setMsg({ text: `Welcome back, ${firstName || "knight"}!`, type: "success" });
-      setTimeout(() => navigate("/UserHome", { replace: true }), 500);
+      if (!token) throw new Error("No token returned from server.");
+
+      // persist EXACTLY what /UserHome expects
+      localStorage.setItem("jwtToken", token); // string, not an object
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: uid,
+          userId: uid,
+          firstName: u.firstName || "",
+          lastName:  u.lastName  || "",
+          email
+        })
+      );
+
+      setMsg({ text: `Welcome back, ${u.firstName || "knight"}!`, type: "success" });
+
+      // navigate after saving so guards don't bounce us
+      navigate("/UserHome", { replace: true });
     } catch (err: any) {
+      console.error("login error:", err);
       setMsg({ text: err?.message || "Unable to sign in. Please try again.", type: "error" });
     } finally {
       setBusy(false);
@@ -88,7 +118,7 @@ export default function LoginPage() {
               placeholder="••••••••" autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)} required
             />
-            <button type="button" className="ft-link ft-btnlink" onClick={() => setShowPwd(v=>!v)}>
+            <button type="button" className="ft-link ft-btnlink" onClick={() => setShowPwd(v => !v)}>
               {showPwd ? "Hide password" : "Show password"}
             </button>
           </div>
@@ -108,4 +138,3 @@ export default function LoginPage() {
     </main>
   );
 }
-  
