@@ -56,8 +56,10 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           source: "frontend/dist/**"
-          target: "${{ env.FRONTEND_DIST }}"
+          target: "/var/www/formatrack/frontend/dist"
           rm: true
+          strip_components: 2   # drop 'frontend/dist/' from the uploaded paths
+
 
       # ---------- BACKEND ----------
       - name: Ensure backend dir exists
