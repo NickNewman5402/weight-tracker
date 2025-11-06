@@ -101,7 +101,7 @@ export default function LoginPage() {
           </div>
 
           <button className="ft-btn" type="submit" disabled={busy}>
-            {busy ? "Signing in..." : "Sign in"}
+            {busy ? "Signing in..." : "Charge On!!!"}
           </button>
         </form>
       </section>
