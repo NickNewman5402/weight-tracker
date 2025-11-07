@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
+  // Dev -> talk to local API; Prod -> use relative /api
   const apiBase =
     window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
       ? "http://localhost:5000/api"
@@ -32,32 +33,42 @@ export default function LoginPage() {
         body: JSON.stringify({ login: email, password }),
       });
 
-      // tolerate text or JSON
-      const ct = resp.headers.get("content-type") || "";
+      const raw = await resp.text();
       let data: any = null;
-      if (ct.includes("application/json")) {
-        data = await resp.json().catch(() => null);
-      } else {
-        const raw = await resp.text();
-        try { data = JSON.parse(raw); } catch { data = { raw }; }
-      }
+      try { data = JSON.parse(raw); } catch {}
 
       if (!resp.ok) {
-        const errMsg = data?.error || data?.message || `Login failed (${resp.status})`;
-        throw new Error(errMsg);
+        throw new Error((data && data.error) || raw || `Login failed (${resp.status})`);
       }
 
-      // normalize token + user fields
-      let token: any = data?.jwtToken || data?.token || data?.accessToken || "";
-      if (typeof token !== "string") token = String(token);
+      // ---- Normalize backend response shape ----
+      // Your API sometimes returns: { jwtToken: { firstName, lastName, id, jwtToken } }
+      // This extracts a STRING token and a user object with an id.
+      let token = "";
+      let u: any = {};
 
-      const u = data?.user || data || {};
-      const uid: string = u.id || u._id || data?.id || data?._id || "";
+      if (typeof data?.jwtToken === "string") {
+        token = data.jwtToken;
+        u = data.user || data || {};
+      } else if (data?.jwtToken && typeof data.jwtToken === "object") {
+        token = data.jwtToken.jwtToken || "";
+        u = {
+          id:        data.jwtToken.id || data.jwtToken.userId || data.jwtToken._id,
+          firstName: data.jwtToken.firstName,
+          lastName:  data.jwtToken.lastName,
+          email:     data.jwtToken.email
+        };
+      } else {
+        u = data?.user || data || {};
+      }
+
+      const uid: string =
+        u.id || u.userId || u._id || data?.id || data?._id || "";
 
       if (!token) throw new Error("No token returned from server.");
 
-      // persist EXACTLY what /UserHome expects
-      localStorage.setItem("jwtToken", token); // string, not an object
+      // ---- Persist EXACTLY what /UserHome expects ----
+      localStorage.setItem("jwtToken", String(token)); // must be a string (e.g., "eyJ...")
       localStorage.setItem(
         "user",
         JSON.stringify({
@@ -71,10 +82,10 @@ export default function LoginPage() {
 
       setMsg({ text: `Welcome back, ${u.firstName || "knight"}!`, type: "success" });
 
-      // navigate after saving so guards don't bounce us
-      navigate("/UserHome", { replace: true });
+      // small delay so user can see banner, then go to UserHome
+      setTimeout(() => navigate("/UserHome", { replace: true }), 400);
+
     } catch (err: any) {
-      console.error("login error:", err);
       setMsg({ text: err?.message || "Unable to sign in. Please try again.", type: "error" });
     } finally {
       setBusy(false);
@@ -94,6 +105,7 @@ export default function LoginPage() {
 
       <section className="ft-card" aria-labelledby="loginHeading">
         <h2 id="loginHeading" className="ft-title">Sign in to your account</h2>
+
         <div aria-live="polite" className={msg ? `ft-banner ${msg.type}` : "ft-banner"}>
           {msg?.text ?? "\u00A0"}
         </div>
@@ -102,9 +114,15 @@ export default function LoginPage() {
           <div className="ft-field">
             <label htmlFor="email">Email</label>
             <input
-              id="email" name="email" type="email" className="ft-input"
-              placeholder="you@knights.ucf.edu" autoComplete="username email"
-              value={email} onChange={(e) => setEmail(e.target.value)} required
+              id="email"
+              name="email"
+              type="email"
+              className="ft-input"
+              placeholder="you@knights.ucf.edu"
+              autoComplete="username email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 
@@ -114,11 +132,21 @@ export default function LoginPage() {
               <a className="ft-link" href="/forgot">Forgot password?</a>
             </div>
             <input
-              id="password" name="password" type={showPwd ? "text" : "password"} className="ft-input"
-              placeholder="••••••••" autoComplete="current-password"
-              value={password} onChange={(e) => setPassword(e.target.value)} required
+              id="password"
+              name="password"
+              type={showPwd ? "text" : "password"}
+              className="ft-input"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
-            <button type="button" className="ft-link ft-btnlink" onClick={() => setShowPwd(v => !v)}>
+            <button
+              type="button"
+              className="ft-link ft-btnlink"
+              onClick={() => setShowPwd(v => !v)}
+            >
               {showPwd ? "Hide password" : "Show password"}
             </button>
           </div>
