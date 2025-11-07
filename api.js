@@ -98,7 +98,16 @@ exports.setApp = function (app, mongoose)
                   return res.status(401).json({ error: 'Login/Password incorrect' });
                 }
 
-                const ok = await bcrypt.compare(password, user.password || '');
+               console.log('DEBUG login attempt:', {
+                      login,
+                      userFound: !!user,
+                      storedHash: user?.password?.slice(0, 20) + '...', // show only part of it
+                      passwordAttempt: password,
+                    });
+
+                    const ok = await bcrypt.compare(password, user.password || '');
+                    console.log('bcrypt.compare result:', ok);
+                
                 if (!ok) {
                   return res.status(401).json({ error: 'Login/Password incorrect' });
                 }
