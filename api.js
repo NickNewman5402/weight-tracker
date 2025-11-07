@@ -99,10 +99,8 @@ exports.setApp = function (app, mongoose)
       const jwtToken = token.createToken(user.firstName, user.lastName, user._id);
 
       res.json({
-        jwtToken,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        login: user.login
+        jwtToken,                       // <-- string
+        user: { id: user._id, firstName, lastName, email: user.email }
       });
 
     } 
