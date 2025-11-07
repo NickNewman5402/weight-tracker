@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const token = require('./createJWT.js');
+const jwt = require('jsonwebtoken');
 const User = require('./models/userRegistration.js')
 
 
@@ -91,7 +92,7 @@ exports.setApp = function (app, mongoose)
 
                 // allow login by username or email
                 const q = String(login).toLowerCase();
-                const user = await Users.findOne({ $or: [{ login: q }, { email: q }] }).lean();
+                const user = await User.findOne({ $or: [{ login: q }, { email: q }] }).lean();
 
                 if (!user) {
                   return res.status(401).json({ error: 'Login/Password incorrect' });
