@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LoginPage.css";
 
-export default function LoginPage() {
+export default function LoginPage() 
+{
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<{ text: string; type: "error" | "success" } | null>(null);
@@ -16,18 +17,23 @@ export default function LoginPage() {
       ? "http://localhost:5000/api"
       : "/api";
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) 
+  {
     e.preventDefault();
     setMsg(null);
 
-    if (!email || !password) {
+    if (!email || !password) 
+    {
       setMsg({ text: "Please enter both email and password.", type: "error" });
       return;
     }
 
     setBusy(true);
-    try {
-      const resp = await fetch(`${apiBase}/login`, {
+    
+    try 
+    {
+      const resp = await fetch(`${apiBase}/login`, 
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login: email, password }),
@@ -37,7 +43,8 @@ export default function LoginPage() {
       let data: any = null;
       try { data = JSON.parse(raw); } catch {}
 
-      if (!resp.ok) {
+      if (!resp.ok) 
+      {
         throw new Error((data && data.error) || raw || `Login failed (${resp.status})`);
       }
 
@@ -47,18 +54,26 @@ export default function LoginPage() {
       let token = "";
       let u: any = {};
 
-      if (typeof data?.jwtToken === "string") {
+      if (typeof data?.jwtToken === "string") 
+      {
         token = data.jwtToken;
         u = data.user || data || {};
-      } else if (data?.jwtToken && typeof data.jwtToken === "object") {
+      } 
+      
+      else if (data?.jwtToken && typeof data.jwtToken === "object") 
+      {
         token = data.jwtToken.jwtToken || "";
-        u = {
+        u = 
+        {
           id:        data.jwtToken.id || data.jwtToken.userId || data.jwtToken._id,
           firstName: data.jwtToken.firstName,
           lastName:  data.jwtToken.lastName,
           email:     data.jwtToken.email
         };
-      } else {
+      } 
+      
+      else 
+      {
         u = data?.user || data || {};
       }
 
@@ -69,7 +84,9 @@ export default function LoginPage() {
 
       // ---- Persist EXACTLY what /UserHome expects ----
       localStorage.setItem("jwtToken", String(token)); // must be a string (e.g., "eyJ...")
-      localStorage.setItem(
+      
+      localStorage.setItem
+      (
         "user",
         JSON.stringify({
           id: uid,
@@ -85,9 +102,15 @@ export default function LoginPage() {
       // small delay so user can see banner, then go to UserHome
       setTimeout(() => navigate("/UserHome", { replace: true }), 400);
 
-    } catch (err: any) {
+    } 
+    
+    catch (err: any) 
+    {
       setMsg({ text: err?.message || "Unable to sign in. Please try again.", type: "error" });
-    } finally {
+    } 
+    
+    finally 
+    {
       setBusy(false);
     }
   }

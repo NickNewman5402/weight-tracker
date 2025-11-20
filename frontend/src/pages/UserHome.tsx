@@ -1,43 +1,78 @@
 //import React from "react";
 import HeaderBar from "../components/HeaderBar";
-// adjust path if your CardUI lives elsewhere
-import CardUI from "../components/CardUI";
-import { Navigate } from "react-router-dom";
+import { getStoredUser } from "../lib/auth";
+import "./UserHome.css";
 
-// mini helpers (or import from src/lib/auth if you made it)
-function getStoredUser(): any | null {
-  const raw = localStorage.getItem("user") ?? sessionStorage.getItem("user");
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
-}
-function getStoredToken(): string | null {
-  return localStorage.getItem("jwtToken") ?? sessionStorage.getItem("jwtToken");
-}
 
 export default function UserHome() {
-  const token = getStoredToken();
   const user = getStoredUser();
-  const userId = user?.id ?? user?.userId;
-
-  if (!token || !userId) {
-    return <Navigate to="/" replace />;
-  }
-
-  const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  const firstName = user?.firstName || user?.firstName || "";
 
   function handleLogout() {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.assign("/"); // or navigate("/")
+    // You can refine this later to match your actual auth flow
+    localStorage.removeItem("token_data");
+    localStorage.removeItem("user_data");
+    window.location.href = "/login";
   }
 
   return (
-    <div className="ft-wrap">
-      <HeaderBar name={name} onLogout={handleLogout} />
-      <section className="ft-card">
-        {/* Your existing Cards UI lives here unchanged */}
-        <CardUI />
-      </section>
+    <div className="ft-page ft-user-page">
+      {/* Top header bar (already part of your app) */}
+      <HeaderBar name={firstName} onLogout={handleLogout} />
+
+      <main className="ft-user-main">
+        {/* Top summary strip */}
+        <section className="ft-user-summary">
+          <div className="ft-card">
+            <div className="ft-card-label">Current weight / etc.</div>
+            <div className="ft-card-value">[placeholder]</div>
+          </div>
+
+          <div className="ft-card">
+            <div className="ft-card-label">Goal / progress</div>
+            <div className="ft-card-value">[placeholder]</div>
+          </div>
+
+          <div className="ft-card">
+            <div className="ft-card-label">Trend / streak</div>
+            <div className="ft-card-value">[placeholder]</div>
+          </div>
+        </section>
+
+        {/* Body: left = graph + recent, right = quick add */}
+        <section className="ft-user-body">
+          <div className="ft-user-left">
+            <div className="ft-panel">
+              <div className="ft-panel-header">
+                <h2>Graph area</h2>
+              </div>
+              <div className="ft-panel-placeholder">
+                Graph will go here.
+              </div>
+            </div>
+
+            <div className="ft-panel">
+              <div className="ft-panel-header">
+                <h2>Recent entries</h2>
+              </div>
+              <div className="ft-panel-placeholder">
+                Recent entries table will go here.
+              </div>
+            </div>
+          </div>
+
+          <aside className="ft-user-right">
+            <div className="ft-panel">
+              <div className="ft-panel-header">
+                <h2>Quick add weigh-in</h2>
+              </div>
+              <div className="ft-panel-placeholder">
+                Quick add form will go here.
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
     </div>
   );
 }

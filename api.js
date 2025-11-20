@@ -8,6 +8,12 @@ const User = require('./models/userRegistration.js')
 exports.setApp = function (app, mongoose) 
 {
 
+  /*****************************************************************************************************************************
+   * 
+   *                                                  /API/REGISTER
+   * 
+   *****************************************************************************************************************************/
+
   app.post('/api/register', async (req, res) => 
             {
                 try 
@@ -76,11 +82,12 @@ exports.setApp = function (app, mongoose)
                 }
             }
           );
-
-        
-  // -------------------------
-  // /api/login
-  // -------------------------
+          
+  /*****************************************************************************************************************************
+   * 
+   *                                                  /API/LOGIN
+   * 
+   *****************************************************************************************************************************/
 
   app.post('/api/login', async (req, res) => 
             {
@@ -95,7 +102,7 @@ exports.setApp = function (app, mongoose)
                 const user = await User.findOne({ $or: [{ login: q }, { email: q }] }).lean();
 
                 if (!user) {
-                  return res.status(401).json({ error: 'Login/Password incorrect' });
+                  return res.status(401).json({ error: 'User does not exist' });
                 }
 
               //  console.log('DEBUG login attempt:', {
@@ -145,62 +152,63 @@ exports.setApp = function (app, mongoose)
             }
           );
 
-
-    // -------------------------
-  // /api/health
-  // -------------------------
+  /*****************************************************************************************************************************
+   * 
+   *                                                  /API/HEALTH
+   * 
+   *****************************************************************************************************************************/
 
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 
 
 
-//   app.post('/api/login', async (req, res) => 
-//             {
-//                 // incoming: login, password
-//                 // outgoing: token OR error
-//                 let ret;
+  //   app.post('/api/login', async (req, res) => 
+  //             {
+  //                 // incoming: login, password
+  //                 // outgoing: token OR error
+  //                 let ret;
 
-//                 try 
-//                 {
-//                     const { login, password } = req.body;
+  //                 try 
+  //                 {
+  //                     const { login, password } = req.body;
 
-//                     // Mongoose find
-//                     const results = await User.find({ Login: login, Password: password });
+  //                     // Mongoose find
+  //                     const results = await User.find({ Login: login, Password: password });
 
-//                     if (results.length > 0) 
-//                     {
-//                         const id = results[0].UserID;
-//                         const fn = results[0].FirstName;
-//                         const ln = results[0].LastName;
+  //                     if (results.length > 0) 
+  //                     {
+  //                         const id = results[0].UserID;
+  //                         const fn = results[0].FirstName;
+  //                         const ln = results[0].LastName;
 
-//                         try 
-//                         {
-//                             const jwt = require('./createJWT.js');
-//                             ret = jwt.createToken(fn, ln, id);
-//                         } 
-                        
-//                         catch (e) 
-//                         {
-//                             ret = { error: e.message };
-//                         }
-//                     } 
-                    
+  //                         try 
+  //                         {
+  //                             const jwt = require('./createJWT.js');
+  //                             ret = jwt.createToken(fn, ln, id);
+  //                         } 
+                          
+  //                         catch (e) 
+  //                         {
+  //                             ret = { error: e.message };
+  //                         }
+  //                     } 
+                      
 
-//                     else 
-//                     {
-//                         ret = { error: 'Login/Password incorrect' };
-//                     }
+  //                     else 
+  //                     {
+  //                         ret = { error: 'Login/Password incorrect' };
+  //                     }
 
-//                 } 
-                
-//                 catch (e) 
-//                 {
-//                     ret = { error: e.toString() };
-//                 }
+  //                 } 
+                  
+  //                 catch (e) 
+  //                 {
+  //                     ret = { error: e.toString() };
+  //                 }
 
-//                 res.status(200).json(ret);
-                
-//             }
-//         );
+  //                 res.status(200).json(ret);
+                  
+  //             }
+  //         );
 };
