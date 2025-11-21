@@ -128,7 +128,29 @@
   opacity: 0.8;
 }
 
-.ft-qa-field input,
+
+.ft-qa-field input[type="date"] {
+  padding-right: 2.5rem; /* space for icon */
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.12)
+  );
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: 2rem 100%;
+}
+
+/* brighten Edge/Chrome date picker icon */
+.ft-qa-field input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.2);
+  opacity: 1;
+  cursor: pointer;
+}
+
+
+
+/*.ft-qa-field input,
 .ft-qa-field textarea {
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 215, 0, 0.3);
@@ -137,7 +159,9 @@
   color: #f4d47a;
   font-family: inherit;
   font-size: 0.9rem;
-}
+}*/
+
+
 
 .ft-qa-field input:focus,
 .ft-qa-field textarea:focus {
@@ -145,33 +169,6 @@
   border-color: rgba(255, 230, 150, 0.8);
   box-shadow: 0 0 6px rgba(255, 230, 150, 0.4);
 }
-
-
-.ft-qa-field input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(1.25);
-  opacity: 1;
-  cursor: pointer;
-}
-
-/* ------------------------------------------
-   Always show + recolor number input spinners
-   ------------------------------------------ */
-
-/* Firefox: enable spinner visibility */
-.ft-qa-field input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-/* WebKit (Chrome / Edge) spinner styling */
-.ft-qa-field input[type="number"]::-webkit-inner-spin-button,
-.ft-qa-field input[type="number"]::-webkit-outer-spin-button {
-  opacity: 1;                    /* always visible */
-  filter: brightness(0.55);      /* darker to match your UI */
-  margin: 0;                     /* align properly */
-  cursor: pointer;
-}
-
-
 
 .ft-qa-field textarea {
   resize: vertical;
