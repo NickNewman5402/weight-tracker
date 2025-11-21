@@ -2,6 +2,39 @@ const bcrypt = require('bcryptjs');
 const token = require('./createJWT.js');
 const jwt = require('jsonwebtoken');
 const User = require('./models/userRegistration.js')
+const WeighIn = require("./models/WeighIn.js");
+
+/**********************************************************************************************
+ * 
+ *                                    JWT HELPER
+ * 
+ * ********************************************************************************************/
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+
+function authenticate(req, res, next) 
+{
+  const authHeader = req.headers["authorization"] || "";
+  const [scheme, rawToken] = authHeader.split(" ");
+
+  if (scheme !== "Bearer" || !rawToken) 
+  {
+    return res.status(401).json({ error: "Missing or invalid auth header" });
+  }
+
+  jwt.verify(rawToken, ACCESS_TOKEN_SECRET, (err, payload) => {
+                if (err) 
+                {
+                  console.error("JWT verify error:", err);
+                  return res.status(403).json({ error: "Invalid or expired token" });
+                }
+
+                // in /api/login you sign { userId, firstName, lastName }
+                // so we’ll mirror that shape here:
+                req.user = { id: payload.userId };
+                next();
+              }
+            );  
+}
 
 
 
@@ -160,6 +193,50 @@ exports.setApp = function (app, mongoose)
 
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+  /*****************************************************************************************************************************
+   * 
+   *                                                  /API/WEIGH-IN
+   * 
+   *****************************************************************************************************************************/
+
+  app.post('/api/weights', authenticate, async (req, res) => {
+              try 
+              {
+                const { date, weight, note } = req.body;
+
+                if (!date || !weight) 
+                {
+                  return res.status(400).json({ error: "date and weight are required" });
+                }
+
+                // req.user should be set by your JWT middleware
+                const userId = req.user && req.user.id;
+                
+                if (!userId) 
+                {
+                  return res.status(401).json({ error: "User not authenticated" });
+                }
+
+                const entry = await WeighIn.create
+                ({
+                    userId,
+                    date: new Date(date),
+                    weight: Number(weight),
+                    note: note || "",
+                });
+
+
+                return res.status(201).json({ weighIn: entry });
+
+              } 
+              
+              catch (err) 
+              {
+                console.error("Error creating weigh-in", err);
+                return res.status(500).json({ error: "Failed to save weigh-in" });
+              }
+            }
+          );
 
 
 

@@ -135,7 +135,7 @@ export default function LoginPage()
 
         <form className="ft-form" onSubmit={onSubmit} noValidate>
           <div className="ft-field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Username</label>
             <input
               id="email"
               name="email"

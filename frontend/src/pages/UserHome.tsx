@@ -1,12 +1,77 @@
-//import React from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import HeaderBar from "../components/HeaderBar";
 import { getStoredUser } from "../lib/auth";
 import "./UserHome.css";
 
 
-export default function UserHome() {
+
+export default function UserHome() 
+{
   const user = getStoredUser();
   const firstName = user?.firstName || user?.firstName || "";
+
+  // Quick add weigh-in form state
+  const [qaDate, setQaDate] = useState<string>(() =>
+    new Date().toISOString().slice(0, 10)
+  );
+
+  const [qaWeight, setQaWeight] = useState<string>("");
+  const [qaNote, setQaNote] = useState<string>("");
+  const [qaMessage, setQaMessage] = useState<string>("");
+
+  async function handleQuickAdd(e: FormEvent) {
+  e.preventDefault();
+  setQaMessage("");
+
+  if (!qaDate || !qaWeight) {
+    setQaMessage("Please enter a date and weight.");
+    return;
+  }
+
+  try {
+    // This key matches what LoginPage.tsx stores:
+    const jwtToken = localStorage.getItem("jwtToken");
+
+    if (!jwtToken) {
+      setQaMessage("You are not logged in.");
+      return;
+    }
+
+    const resp = await fetch("/api/weights", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${jwtToken}`,
+      },
+      body: JSON.stringify({
+        date: qaDate,
+        weight: Number(qaWeight),
+        note: qaNote || undefined,
+      }),
+    });
+
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      const msg = data.error || `Error: ${resp.status}`;
+      setQaMessage(msg);
+      return;
+    }
+
+    const data = await resp.json();
+    console.log("Saved weigh-in:", data.weighIn);
+
+    setQaMessage("Weigh-in saved!");
+    setQaWeight("");
+    setQaNote("");
+  } catch (err) {
+    console.error(err);
+    setQaMessage("Network error saving weigh-in.");
+  }
+}
+
+
+
 
   function handleLogout() {
     // You can refine this later to match your actual auth flow
@@ -62,13 +127,52 @@ export default function UserHome() {
           </div>
 
           <aside className="ft-user-right">
-            <div className="ft-panel">
+           <div className="ft-panel">
               <div className="ft-panel-header">
-                <h2>Quick add weigh-in</h2>
+                <h2>Daily Weigh-in</h2>
               </div>
-              <div className="ft-panel-placeholder">
-                Quick add form will go here.
-              </div>
+
+              {qaMessage && (
+                <div className="ft-qa-message">
+                  {qaMessage}
+                </div>
+              )}
+
+              <form className="ft-qa-form" onSubmit={handleQuickAdd}>
+                <label className="ft-qa-field">
+                  <span>Date</span>
+                  <input
+                    type="date"
+                    value={qaDate}
+                    onChange={(e) => setQaDate(e.target.value)}
+                  />
+                </label>
+
+                <label className="ft-qa-field">
+                  <span>Weight (lbs)</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={qaWeight}
+                    onChange={(e) => setQaWeight(e.target.value)}
+                    placeholder="e.g. 261.4"
+                  />
+                </label>
+
+                <label className="ft-qa-field">
+                  <span>Note (optional)</span>
+                  <textarea
+                    rows={2}
+                    value={qaNote}
+                    onChange={(e) => setQaNote(e.target.value)}
+                    placeholder="Morning, after run, etc."
+                  />
+                </label>
+
+                <button className="ft-btn ft-btn-primary" type="submit">
+                  Save weigh-in
+                </button>
+              </form>
             </div>
           </aside>
         </section>

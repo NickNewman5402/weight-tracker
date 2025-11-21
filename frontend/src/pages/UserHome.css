@@ -9,7 +9,6 @@
     );
 }
 
-
 .ft-user-main {
   max-width: 1100px;
   margin: 0 auto;
@@ -100,4 +99,84 @@
 .ft-card-sub,
 .ft-panel-header h2 {
   color: #f4d47a;
+}
+
+/***************************************************************************************
+*
+*                                 QUICK ADD FORMATTING
+*
+****************************************************************************************/
+
+/* Quick add form styling */
+.ft-qa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ft-qa-field {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.ft-qa-field span {
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.ft-qa-field input,
+.ft-qa-field textarea {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  color: #f4d47a;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.ft-qa-field input:focus,
+.ft-qa-field textarea:focus {
+  outline: none;
+  border-color: rgba(255, 230, 150, 0.8);
+  box-shadow: 0 0 6px rgba(255, 230, 150, 0.4);
+}
+
+.ft-qa-field textarea {
+  resize: vertical;
+  min-height: 2.2rem;
+}
+
+.ft-btn.ft-btn-primary {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 215, 0, 0.6);
+  background: radial-gradient(circle at 50% 0, #f4d47a, #b28b2a);
+  color: #1b1408;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.ft-btn.ft-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
+.ft-btn.ft-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* quick messages */
+.ft-qa-message {
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.85;
 }
