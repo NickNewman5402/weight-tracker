@@ -145,7 +145,28 @@ const filteredData = useMemo(() =>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="xLabel" />
               <YAxis domain={["auto", "auto"]} />
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  background: "rgba(0, 0, 0, 0.85)",
+                  border: "1px solid rgba(245,201,111,0.65)",
+                  borderRadius: "10px",
+                  padding: "8px 12px",
+                  color: "#f5d98a",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.6)",
+                }}
+                labelStyle={{
+                  color: "#f8e6b0",
+                  fontSize: "0.85rem",
+                  marginBottom: "4px",
+                  fontWeight: 600,
+                  textShadow: "0 0 4px rgba(0,0,0,0.8)"
+                }}
+                itemStyle={{
+                  color: "#d4b46a",
+                  fontSize: "0.8rem",
+                }}
+              />
+
               <Line type="monotone" dataKey="weight" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
