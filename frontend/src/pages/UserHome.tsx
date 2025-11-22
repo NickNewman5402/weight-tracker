@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import HeaderBar from "../components/HeaderBar";
 import { getStoredUser } from "../lib/auth";
 import "./UserHome.css";
 import RecentEntries from "../components/RecentEntries";
+import WeightTrendChart from "../components/WeightTrendChart";
 
+type WeighIn = {
+  _id?: string;
+  date: string;
+  weight: number;
+  note?: string;
+};
 
-
-export default function UserHome() 
-{
+export default function UserHome() {
   const user = getStoredUser();
   const firstName = user?.firstName || user?.firstName || "";
 
@@ -16,11 +21,57 @@ export default function UserHome()
   const [qaDate, setQaDate] = useState<string>(() =>
     new Date().toISOString().slice(0, 10)
   );
-
   const [qaWeight, setQaWeight] = useState<string>("");
   const [qaNote, setQaNote] = useState<string>("");
   const [qaMessage, setQaMessage] = useState<string>("");
-  const [recentRefreshKey, setRecentRefreshKey] = useState<number>(0);     // Trigger refetch of recent weigh-ins when this changes
+  const [recentRefreshKey, setRecentRefreshKey] = useState<number>(0); // Trigger refetch of recent weigh-ins when this changes
+  const [weighIns, setWeighIns] = useState<WeighIn[]>([]);
+
+  // 🔹 Fetch all weigh-ins for the graph
+  useEffect(() => {
+    const fetchWeighIns = async () => {
+      try {
+        const jwtToken = localStorage.getItem("jwtToken");
+        if (!jwtToken) return;
+
+        const resp = await fetch("/api/weights/recent?limit=50", {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        });
+
+        if (!resp.ok) {
+          console.error("Failed to fetch weights", resp.status);
+          return;
+        }
+
+        const data = await resp.json();
+        console.log("Weights API response:", data);
+
+        const arr = Array.isArray(data)
+          ? data
+          : data.weighIns || data.weights || data.entries || [];
+
+        if (!Array.isArray(arr)) {
+          console.error("Weights response is not an array:", data);
+          return;
+        }
+
+        setWeighIns(
+          arr.map((w: any) => ({
+            _id: w._id,
+            date: w.date,
+            weight: Number(w.weight),
+            note: w.note,
+          }))
+        );
+      } catch (err) {
+        console.error("Error fetching weigh-ins:", err);
+      }
+    };
+
+    fetchWeighIns();
+  }, [recentRefreshKey]);
 
 
   async function handleQuickAdd(e: FormEvent) 
@@ -125,8 +176,8 @@ export default function UserHome()
               <div className="ft-panel-header">
                 <h2>Graph area</h2>
               </div>
-              <div className="ft-panel-placeholder">
-                Graph will go here.
+              <div style={{ padding: "10px 0" }}>
+                <WeightTrendChart weighIns={weighIns} />
               </div>
             </div>
 

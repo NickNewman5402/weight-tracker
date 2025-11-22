@@ -60,10 +60,10 @@ function RegistrationUI() {
           <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
         </label><br /><br />
         <label>Password<br />
-          <input type="password" value={password} onChange={e=>setPassword(e.target.value)} minLength={6} required />
+          <input type="password" value={password} onChange={e=>setPassword(e.target.value)} />
         </label><br /><br />
         <label>Confirm password<br />
-          <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} minLength={6} required />
+          <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} />
         </label><br /><br />
 
         <button type="submit" className="buttons" disabled={loading}>
