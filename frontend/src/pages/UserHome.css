@@ -156,8 +156,7 @@
 /* ------------------------------------------
    Always show + recolor number input spinners
    ------------------------------------------ */
-
-/* Firefox: enable spinner visibility */
+/* enable spinner visibility */
 .ft-qa-field input[type="number"] {
   -moz-appearance: textfield;
 }
@@ -207,3 +206,52 @@
   font-size: 0.8rem;
   opacity: 0.85;
 }
+
+/***************************************************************************************
+*
+*                                 RECENT WEIGHTS FORMATTING
+*
+****************************************************************************************/
+
+.ft-recent-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.ft-recent-header, .ft-recent-row {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  padding: 6px 4px;
+}
+
+.ft-recent-header {
+  font-weight: bold;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.ft-recent-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ft-recent-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.ft-link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  color: #b6862c; /* or your gold */
+}
+
+.ft-link-button--danger {
+  color: #b6862c;
+}
+

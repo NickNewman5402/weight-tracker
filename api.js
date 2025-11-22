@@ -195,7 +195,7 @@ exports.setApp = function (app, mongoose)
 
   /*****************************************************************************************************************************
    * 
-   *                                                  /API/WEIGH-IN
+   *                                                  /API/WEIGHTS
    * 
    *****************************************************************************************************************************/
 
@@ -209,25 +209,24 @@ exports.setApp = function (app, mongoose)
                   return res.status(400).json({ error: "date and weight are required" });
                 }
 
-                // req.user should be set by your JWT middleware
                 const userId = req.user && req.user.id;
-                
                 if (!userId) 
                 {
                   return res.status(401).json({ error: "User not authenticated" });
                 }
 
+                // IMPORTANT: interpret the date string as local midnight, not UTC
+                const localMidnight = new Date(`${date}T00:00:00`);
+
                 const entry = await WeighIn.create
                 ({
-                    userId,
-                    date: new Date(date),
-                    weight: Number(weight),
-                    note: note || "",
+                  userId,
+                  date: localMidnight,
+                  weight: Number(weight),
+                  note: note || "",
                 });
 
-
                 return res.status(201).json({ weighIn: entry });
-
               } 
               
               catch (err) 
@@ -238,54 +237,130 @@ exports.setApp = function (app, mongoose)
             }
           );
 
+  /*****************************************************************************************************************************
+   * 
+   *                                                  /API/WEIGHTS/RECENT
+   * 
+   *****************************************************************************************************************************/
+
+  app.get('/api/weights/recent', authenticate, async (req, res) => {
+              try 
+              {
+                const userId = req.user && req.user.id;
+
+                if (!userId) 
+                {
+                  return res.status(401).json({ error: "User not authenticated" });
+                }
+
+                const limit = parseInt(req.query.limit, 10) || 10;
+
+                const entries = await WeighIn.find({ userId })
+                  .sort({ date: -1 })          // newest → oldest
+                  .limit(limit)
+                  .lean();
+
+                return res.status(200).json({ entries });
+              }
 
 
-  //   app.post('/api/login', async (req, res) => 
-  //             {
-  //                 // incoming: login, password
-  //                 // outgoing: token OR error
-  //                 let ret;
+              catch (err) 
+              {
+                console.error("Error loading recent entries:", err);
+                return res.status(500).json({ error: "Failed to load recent entries" });
+              }
+              
+            }
+          );
 
-  //                 try 
-  //                 {
-  //                     const { login, password } = req.body;
+  /*****************************************************************************************************************************
+   * 
+   *                                                  DELETE /API/WEIGHTS/:id
+   * 
+   *****************************************************************************************************************************/
 
-  //                     // Mongoose find
-  //                     const results = await User.find({ Login: login, Password: password });
+  app.delete('/api/weights/:id', authenticate, async (req, res) => {
+                try 
+                {
+                  const userId = req.user && req.user.id;
+                  if (!userId) 
+                  {
+                    return res.status(401).json({ error: "User not authenticated" });
+                  }
 
-  //                     if (results.length > 0) 
-  //                     {
-  //                         const id = results[0].UserID;
-  //                         const fn = results[0].FirstName;
-  //                         const ln = results[0].LastName;
+                  const { id } = req.params;
 
-  //                         try 
-  //                         {
-  //                             const jwt = require('./createJWT.js');
-  //                             ret = jwt.createToken(fn, ln, id);
-  //                         } 
-                          
-  //                         catch (e) 
-  //                         {
-  //                             ret = { error: e.message };
-  //                         }
-  //                     } 
-                      
+                  const deleted = await WeighIn.findOneAndDelete({ _id: id, userId });
 
-  //                     else 
-  //                     {
-  //                         ret = { error: 'Login/Password incorrect' };
-  //                     }
+                  if (!deleted) 
+                  {
+                    return res.status(404).json({ error: "Weigh-in not found" });
+                  }
 
-  //                 } 
-                  
-  //                 catch (e) 
-  //                 {
-  //                     ret = { error: e.toString() };
-  //                 }
+                  return res.status(200).json({ message: "Weigh-in deleted" });
+                } 
+                
+                catch (err) 
+                {
+                  console.error("Error deleting weigh-in:", err);
+                  return res.status(500).json({ error: "Failed to delete weigh-in" });
+                }
+              }
+            );
 
-  //                 res.status(200).json(ret);
-                  
-  //             }
-  //         );
+  /*****************************************************************************************************************************
+   * 
+   *                                                  PUT /API/WEIGHTS/:id
+   * 
+   *****************************************************************************************************************************/
+
+  app.put('/api/weights/:id', authenticate, async (req, res) => {
+              try 
+              {
+              
+                const userId = req.user && req.user.id;
+                if (!userId) 
+                {
+                  return res.status(401).json({ error: "User not authenticated" });
+                }
+
+                const { id } = req.params;
+                const { date, weight, note } = req.body;
+
+                const entry = await WeighIn.findOne({ _id: id, userId });
+
+                if (!entry) 
+                {
+                  return res.status(404).json({ error: "Weigh-in not found" });
+                }
+
+                if (date) 
+                {
+                  entry.date = new Date(`${date}T00:00:00`);
+                }
+
+                if (typeof weight !== "undefined") 
+                {
+                  entry.weight = Number(weight);
+                }
+
+                if (typeof note !== "undefined") 
+                {
+                  entry.note = note;
+                }
+
+                await entry.save();
+
+                return res.status(200).json({ weighIn: entry });
+              } 
+              
+              catch (err) 
+              {
+                console.error("Error updating weigh-in:", err);
+                return res.status(500).json({ error: "Failed to update weigh-in" });
+              }
+
+            }
+          );
+
 };

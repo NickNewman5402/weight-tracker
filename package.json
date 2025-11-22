@@ -2,8 +2,10 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "server.js",
-  "scripts": {
-    "start": "nodemon --config nodemon.json server.js"
+"scripts": {
+  "start": "nodemon --config nodemon.json server.js",
+  "test": "cross-env NODE_ENV=test jest --runInBand",
+  "test:coverage": "cross-env NODE_ENV=test jest --runInBand --coverage"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -15,6 +17,9 @@
     "mongoose": "^8.19.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4"
   }
 }

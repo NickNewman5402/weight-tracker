@@ -7,6 +7,7 @@ frontend/dist/
 
 # Environment files
 .env
+.env.test
 frontend/.env
 
 # Logs
@@ -21,3 +22,7 @@ yarn-error.log*
 frontend/dist/
 frontend/node_modules/
 coverage/
+
+# OS files
+Thumbs.db
+desktop.ini

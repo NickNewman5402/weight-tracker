@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import HeaderBar from "../components/HeaderBar";
 import { getStoredUser } from "../lib/auth";
 import "./UserHome.css";
+import RecentEntries from "../components/RecentEntries";
 
 
 
@@ -19,55 +20,68 @@ export default function UserHome()
   const [qaWeight, setQaWeight] = useState<string>("");
   const [qaNote, setQaNote] = useState<string>("");
   const [qaMessage, setQaMessage] = useState<string>("");
+  const [recentRefreshKey, setRecentRefreshKey] = useState<number>(0);     // Trigger refetch of recent weigh-ins when this changes
 
-  async function handleQuickAdd(e: FormEvent) {
-  e.preventDefault();
-  setQaMessage("");
 
-  if (!qaDate || !qaWeight) {
-    setQaMessage("Please enter a date and weight.");
-    return;
-  }
+  async function handleQuickAdd(e: FormEvent) 
+  {
+      e.preventDefault();
+      setQaMessage("");
 
-  try {
-    // This key matches what LoginPage.tsx stores:
-    const jwtToken = localStorage.getItem("jwtToken");
+      if (!qaDate || !qaWeight) 
+      {
+        setQaMessage("Please enter a date and weight.");
+        return;
+      }
 
-    if (!jwtToken) {
-      setQaMessage("You are not logged in.");
-      return;
-    }
+      try 
+      {
+        // This key matches what LoginPage.tsx stores:
+        const jwtToken = localStorage.getItem("jwtToken");
 
-    const resp = await fetch("/api/weights", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${jwtToken}`,
-      },
-      body: JSON.stringify({
-        date: qaDate,
-        weight: Number(qaWeight),
-        note: qaNote || undefined,
-      }),
-    });
+        if (!jwtToken) 
+        {
+          setQaMessage("You are not logged in.");
+          return;
+        }
 
-    if (!resp.ok) {
-      const data = await resp.json().catch(() => ({}));
-      const msg = data.error || `Error: ${resp.status}`;
-      setQaMessage(msg);
-      return;
-    }
+        const resp = await fetch("/api/weights", 
+                                  {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Bearer ${jwtToken}`,
+                                      },
+                                      body: JSON.stringify({
+                                        date: qaDate,
+                                        weight: Number(qaWeight),
+                                        note: qaNote || undefined,
+                                      }),
+                                  }
+                                );
 
-    const data = await resp.json();
-    console.log("Saved weigh-in:", data.weighIn);
+        if (!resp.ok) 
+        {
+          const data = await resp.json().catch(() => ({}));
+          const msg = data.error || `Error: ${resp.status}`;
+          setQaMessage(msg);
+          return;
+        }
 
-    setQaMessage("Weigh-in saved!");
-    setQaWeight("");
-    setQaNote("");
-  } catch (err) {
-    console.error(err);
-    setQaMessage("Network error saving weigh-in.");
-  }
+        const data = await resp.json();
+        console.log("Saved weigh-in:", data.weighIn);
+
+        setQaMessage("Weigh-in saved!");
+        setQaWeight("");
+        setQaNote("");
+        setRecentRefreshKey((prev) => prev + 1); // Tell RecentEntries to refetch
+      } 
+      
+      catch (err) 
+      {
+        console.error(err);
+        setQaMessage("Network error saving weigh-in.");
+      }
 }
 
 
@@ -118,12 +132,11 @@ export default function UserHome()
 
             <div className="ft-panel">
               <div className="ft-panel-header">
-                <h2>Recent entries</h2>
+                <h2>Recent Weigh-Ins</h2>
               </div>
-              <div className="ft-panel-placeholder">
-                Recent entries table will go here.
-              </div>
-            </div>
+            <RecentEntries refreshKey={recentRefreshKey} />
+          </div>
+
           </div>
 
           <aside className="ft-user-right">
