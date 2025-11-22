@@ -1,22 +1,19 @@
 name: Deploy MERN Application
 
-# --- ONLY DEPLOY ON TAGS LIKE v1.1.0, v2.0.3, etc ---
 on:
   push:
     tags:
-      - 'v*'      # any tag that starts with "v"
-  workflow_dispatch: {}   # still allow manual run
+      - 'v*'
+  workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    # Checkout the repository code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Setup Node.js
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
@@ -26,16 +23,17 @@ jobs:
           package-lock.json
           frontend/package-lock.json
 
-    # Install and build frontend
+    # ----------------------------------------
+    # FRONTEND BUILD
+    # ----------------------------------------
     - name: Install frontend dependencies
       working-directory: ./frontend
-      run: npm ci
+      run: npm install
 
     - name: Build frontend
       working-directory: ./frontend
       run: npm run build
 
-    # Deploy frontend to server
     - name: Deploy frontend to server
       uses: appleboy/scp-action@v0.1.5
       with:
@@ -48,7 +46,9 @@ jobs:
         strip_components: 2
         rm: true
 
-    # Deploy backend files to server
+    # ----------------------------------------
+    # BACKEND DEPLOY
+    # ----------------------------------------
     - name: Deploy backend files
       uses: appleboy/scp-action@v0.1.5
       with:
@@ -56,12 +56,11 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
-        source: "server.js,package.json,package-lock.json"
+        source: "server.js,package.json,package-lock.json,api.js,models/*"
         target: "/var/cardsServer"
         overwrite: true
 
-    # Install backend dependencies and restart PM2
-    - name: Install dependencies and restart server
+    - name: Install backend dependencies and restart PM2
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.SERVER_HOST }}
@@ -69,20 +68,16 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          # Navigate to backend directory
           cd /var/cardsServer
           
-          # Install dependencies
-          npm ci --production
-          
-          # Ensure PM2 is installed globally
+          echo "Installing backend dependencies..."
+          npm install --omit=dev
+
+          echo "Ensuring PM2 exists..."
           npm list -g pm2 || npm install -g pm2
-          
-          # Reload the application with PM2 (zero-downtime reload)
+
+          echo "Restarting backend..."
           pm2 reload express-server --update-env || pm2 start server.js --name "express-server"
           
-          # Save PM2 process list
           pm2 save
-          
-          # Optional: Clear nginx cache if needed
-          nginx -s reload
+          nginx -s reload || true
