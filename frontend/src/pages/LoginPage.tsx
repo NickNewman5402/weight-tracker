@@ -24,7 +24,7 @@ export default function LoginPage()
   async function onSubmit(e: React.FormEvent) 
   {
     e.preventDefault();
-    setMsg(null);
+    //setMsg(null);
 
     if (!email || !password) 
     {
