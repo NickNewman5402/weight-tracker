@@ -81,7 +81,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
-          source: "server.js,api.js,createJWT.js,package.json,package-lock.json,models/**"
+          source: "server.js,api.js,createJWT.js,package.json,sendEmail.js,package-lock.json,models/**"
           target: "${{ env.BACKEND_DIR }}"
           overwrite: true
 
