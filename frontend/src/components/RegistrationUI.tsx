@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import buildPath from './Path'; // default export in your project
 
+
 function RegistrationUI() {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [login,     setLogin]     = useState('');
@@ -11,7 +14,8 @@ function RegistrationUI() {
   const [message,   setMessage]   = useState('');
   const [loading,   setLoading]   = useState(false);
 
-  async function onRegister(e: React.FormEvent) {
+  async function onRegister(e: React.FormEvent) 
+  {
     e.preventDefault();
     setMessage('');
     if (password !== confirm) {
@@ -19,27 +23,37 @@ function RegistrationUI() {
       return;
     }
     setLoading(true);
-    try {
+    try 
+    {
       const resp = await fetch(buildPath('register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, login, email, password })
       });
+
       const data = await resp.json();
 
-      if (!resp.ok || data.error) {
+      if (!resp.ok || data.error) 
+      {
         setMessage(data.error || 'Registration failed.');
         return;
       }
 
-      setMessage('Registered successfully. Please log in.');
-      // go to login page (your root route)
-      window.location.href = '/';
-    } catch (err: any) {
+      // Successful registration: send user to login with a flag
+      navigate('/?pendingVerification=1');
+
+    } 
+    
+    catch (err: any) 
+    {
       setMessage(err?.message ?? 'Network error.');
-    } finally {
+    } 
+    
+    finally 
+    {
       setLoading(false);
     }
+
   }
 
   return (

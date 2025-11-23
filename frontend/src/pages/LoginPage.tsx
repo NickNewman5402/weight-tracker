@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import "./LoginPage.css";
 
 export default function LoginPage() 
@@ -10,6 +10,10 @@ export default function LoginPage()
   const [showPwd, setShowPwd] = useState(false);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const pendingVerification = params.get("pendingVerification") === "1";
+
 
   // Dev -> talk to local API; Prod -> use relative /api
   const apiBase =
@@ -130,8 +134,12 @@ export default function LoginPage()
         <h2 id="loginHeading" className="ft-title">Sign in to your account</h2>
 
         <div aria-live="polite" className={msg ? `ft-banner ${msg.type}` : "ft-banner"}>
-          {msg?.text ?? "\u00A0"}
+            {msg?.text ??
+              (pendingVerification
+                ? "Account created! Please check your email to verify your account before logging in."
+                : "\u00A0")}
         </div>
+
 
         <form className="ft-form" onSubmit={onSubmit} noValidate>
           <div className="ft-field">
