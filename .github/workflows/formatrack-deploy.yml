@@ -2,8 +2,10 @@ name: Deploy FormaTrack
 
 on:
   push:
-    branches: [ main ]
+    tags:
+      - 'v*.*.*'
   workflow_dispatch: {}
+
 
 env:
   APP_DIR: /var/www/formatrack
