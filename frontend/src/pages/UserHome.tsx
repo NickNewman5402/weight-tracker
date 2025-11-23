@@ -155,17 +155,17 @@ export default function UserHome() {
         <section className="ft-user-summary">
           <div className="ft-card">
             <div className="ft-card-label">Current weight / etc.</div>
-            <div className="ft-card-value">[placeholder]</div>
+            <div className="ft-card-value">Coming soon</div>
           </div>
 
           <div className="ft-card">
             <div className="ft-card-label">Goal / progress</div>
-            <div className="ft-card-value">[placeholder]</div>
+            <div className="ft-card-value">Coming soon</div>
           </div>
 
           <div className="ft-card">
             <div className="ft-card-label">Trend / streak</div>
-            <div className="ft-card-value">[placeholder]</div>
+            <div className="ft-card-value">Coming soon</div>
           </div>
         </section>
 
