@@ -42,8 +42,12 @@ function authenticate(req, res, next)
 }
 
 
-  const EMAIL_FROM = process.env.EMAIL_FROM || 'no-reply@formatrack.local';
-  const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'no-reply@formatrack.local';
+const FRONTEND_BASE_URL =
+  process.env.FRONTEND_BASE_URL ||
+  process.env.FRONTEND_URL ||
+  'http://localhost:5173';
+
 
   // Configure your SMTP transport (example: Gmail with app password)
   /*const transporter = nodemailer.createTransport
@@ -196,6 +200,8 @@ exports.setApp = function (app, mongoose)
                   console.log('[HIT] /api/register real handler');
 
                   const { firstName, lastName, login, email, password } = req.body;
+                  const normalizedLogin = login.toLowerCase();
+                  const normalizedEmail = email.toLowerCase();
 
                   if (!firstName || !lastName || !login || !email || !password) 
                   {
@@ -209,7 +215,7 @@ exports.setApp = function (app, mongoose)
 
                   // Check if login or email already exist
                   const existing = await User.findOne({
-                    $or: [{ login }, { email }]
+                    $or: [{ login: normalizedLogin }, { email: normalizedEmail }]
                   }).lean();
 
                   if (existing) 
@@ -221,13 +227,15 @@ exports.setApp = function (app, mongoose)
                   const hashedPassword = await bcrypt.hash(password, 12);
 
                   // Create user instance but DON'T save yet
-                  let user = new User({
+                  let user = new User
+                  ({
                     firstName,
                     lastName,
-                    login,
-                    email,
-                    password: hashedPassword
+                    login: normalizedLogin,
+                    email: normalizedEmail,
+                    password: hashedPassword,
                   });
+
 
                   // 🔑 Create verification token and save it to user
                   const verifyToken = user.createEmailVerificationToken();
@@ -242,7 +250,7 @@ exports.setApp = function (app, mongoose)
                   try 
                   {
                     await sendEmail({
-                      to: email,
+                      to: normalizedEmail,
                       subject: "Verify your FormaTrack email",
                       html: `
                         <p>Hello ${firstName},</p>

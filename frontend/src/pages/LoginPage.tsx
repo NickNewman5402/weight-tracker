@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "./LoginPage.css";
 
 export default function LoginPage() 
@@ -152,7 +152,9 @@ export default function LoginPage()
           <div className="ft-field">
             <div className="ft-row ft-row-compact">
               <label htmlFor="password">Password</label>
-              <a className="ft-link" href="/forgot">Forgot password?</a>
+                <Link className="ft-link" to="/forgot-password">
+                  Forgot password?
+                </Link>
             </div>
             <input
               id="password"
