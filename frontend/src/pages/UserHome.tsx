@@ -357,7 +357,7 @@ export default function UserHome()
     }
 
     try {
-      const resp = await fetch("http://localhost:5000/api/users/goal", {
+      const resp = await fetch("/api/users/goal", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
