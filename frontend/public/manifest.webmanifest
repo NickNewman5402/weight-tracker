@@ -5,8 +5,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#020817",
-  "theme_color": "#22c55e",
+  "background_color": "#3e3e3e",
+  "theme_color": "#b6862c",
   "description": "FormaTrack: web + mobile weight & goal tracker.",
   "icons": [
     {
