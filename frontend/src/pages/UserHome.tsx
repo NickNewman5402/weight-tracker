@@ -6,6 +6,7 @@ import "./UserHome.css";
 import RecentEntries from "../components/RecentEntries";
 import WeightTrendChart from "../components/WeightTrendChart";
 
+
 type WeighIn = {
   _id?: string;
   date: string;
@@ -13,7 +14,9 @@ type WeighIn = {
   note?: string;
 };
 
-export default function UserHome() {
+
+export default function UserHome() 
+{
   const user = getStoredUser();
   const firstName = user?.firstName || user?.firstName || "";
 
@@ -26,52 +29,69 @@ export default function UserHome() {
   const [qaMessage, setQaMessage] = useState<string>("");
   const [recentRefreshKey, setRecentRefreshKey] = useState<number>(0); // Trigger refetch of recent weigh-ins when this changes
   const [weighIns, setWeighIns] = useState<WeighIn[]>([]);
+  const [latestWeight, setLatestWeight] = useState<WeighIn | null>(null);
+
 
   // 🔹 Fetch all weigh-ins for the graph
-  useEffect(() => {
-    const fetchWeighIns = async () => {
-      try {
-        const jwtToken = localStorage.getItem("jwtToken");
-        if (!jwtToken) return;
+  // 🔹 Fetch all weigh-ins for the graph + latest weight card
+useEffect(() => {
+  const fetchWeighIns = async () => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      if (!jwtToken) return;
 
-        const resp = await fetch("/api/weights/recent?limit=50", {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        });
+      const resp = await fetch("/api/weights/recent?limit=50", {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
 
-        if (!resp.ok) {
-          console.error("Failed to fetch weights", resp.status);
-          return;
-        }
-
-        const data = await resp.json();
-        console.log("Weights API response:", data);
-
-        const arr = Array.isArray(data)
-          ? data
-          : data.weighIns || data.weights || data.entries || [];
-
-        if (!Array.isArray(arr)) {
-          console.error("Weights response is not an array:", data);
-          return;
-        }
-
-        setWeighIns(
-          arr.map((w: any) => ({
-            _id: w._id,
-            date: w.date,
-            weight: Number(w.weight),
-            note: w.note,
-          }))
-        );
-      } catch (err) {
-        console.error("Error fetching weigh-ins:", err);
+      if (!resp.ok) {
+        console.error("Failed to fetch weights", resp.status);
+        return;
       }
-    };
 
-    fetchWeighIns();
-  }, [recentRefreshKey]);
+      const data = await resp.json();
+      console.log("Weights API response:", data);
+
+      // Get an array out of whatever shape the backend sent
+      const arr = Array.isArray(data)
+        ? data
+        : data.weighIns || data.weights || data.entries || [];
+
+      if (!Array.isArray(arr)) {
+        console.error("Weights response is not an array:", data);
+        return;
+      }
+
+      // Oldest → newest (by date)
+      const sorted = [...arr].sort(
+        (a: any, b: any) =>
+          new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      const normalized: WeighIn[] = sorted.map((w: any) => ({
+        _id: w._id,
+        date: w.date,
+        weight: Number(w.weight),
+        note: w.note,
+      }));
+
+      setWeighIns(normalized);
+
+      // 👇 last item is the newest by date
+      setLatestWeight(
+        normalized.length > 0 ? normalized[normalized.length - 1] : null
+      );
+
+    } catch (err) {
+      console.error("Error fetching weigh-ins:", err);
+    }
+  };
+
+  fetchWeighIns();
+}, [recentRefreshKey]);
+
 
 
   async function handleQuickAdd(e: FormEvent) 
@@ -136,8 +156,6 @@ export default function UserHome() {
 }
 
 
-
-
   function handleLogout() {
     // You can refine this later to match your actual auth flow
     localStorage.removeItem("token_data");
@@ -155,8 +173,10 @@ export default function UserHome() {
         <section className="ft-user-summary">
           <div className="ft-card">
             <div className="ft-card-label">Current weight / etc.</div>
-            <div className="ft-card-value">Coming soon</div>
-          </div>
+            <div className="ft-card-value">
+              {latestWeight ? `${latestWeight.weight} lbs` : "—"}
+            </div>
+            </div>
 
           <div className="ft-card">
             <div className="ft-card-label">Goal / progress</div>
