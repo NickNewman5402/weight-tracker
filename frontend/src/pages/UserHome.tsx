@@ -15,6 +15,7 @@ type WeighIn = {
 };
 
 
+
 /*****************************************************************************************************************************
  *                                                                                                                          * 
  *                                                  HELPER FUNCTIONS                                                        *
@@ -121,6 +122,12 @@ export default function UserHome()
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [goalInput, setGoalInput] = useState<string>("");
   const [goalMessage, setGoalMessage] = useState<string>("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editRecordId, setEditRecordId] = useState<string | null>(null);
+  const [editWeightInput, setEditWeightInput] = useState<string>("");
+  const [editDateDisplay, setEditDateDisplay] = useState<string>("");
+  const [editMessage, setEditMessage] = useState<string>("");
+
 
   // keep the input in sync with whatever goalWeight we currently have
   useEffect(() => {
@@ -383,6 +390,83 @@ export default function UserHome()
     }
   }
 
+function openEditModal(entry: WeighIn) {
+  // Open the modal and pre-fill fields from the entry
+  setIsEditModalOpen(true);
+  setEditRecordId(entry._id || null);
+  setEditWeightInput(entry.weight.toString());
+  setEditDateDisplay(entry.date.slice(0, 10)); // YYYY-MM-DD
+  setEditMessage("");
+}
+
+function closeEditModal() {
+  // Close + reset modal state
+  setIsEditModalOpen(false);
+  setEditRecordId(null);
+  setEditWeightInput("");
+  setEditDateDisplay("");
+  setEditMessage("");
+}
+
+async function handleSaveEditedWeight(e: FormEvent) 
+{
+
+  e.preventDefault();
+  setEditMessage("");
+
+  if (!editRecordId) {
+    setEditMessage("Missing record id.");
+    return;
+  }
+
+  const parsed = parseFloat(editWeightInput);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    setEditMessage("Please enter a valid positive number.");
+    return;
+  }
+
+  const jwtToken = localStorage.getItem("jwtToken");
+  if (!jwtToken) {
+    setEditMessage("You are not logged in.");
+    return;
+  }
+
+  try {
+    // 🔁 Uses a standard REST-style endpoint; if your current
+    // edit code uses a slightly different URL, we can tweak later.
+    const resp = await fetch(`/api/weights/${editRecordId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${jwtToken}`,
+      },
+      body: JSON.stringify({ weight: parsed }),
+    });
+
+    if (!resp.ok) 
+    {
+      const data = await resp.json().catch(() => ({}));
+      const msg = data.error || `Error: ${resp.status}`;
+      setEditMessage(msg);
+      return;
+    }
+
+    // Success → close modal + refresh RecentEntries / graph
+    setIsEditModalOpen(false);
+    setEditRecordId(null);
+    setEditWeightInput("");
+    setEditDateDisplay("");
+    setEditMessage("");
+    setRecentRefreshKey((prev) => prev + 1);
+
+  } catch (err) {
+    console.error("Error updating weigh-in:", err);
+    setEditMessage("Network error updating weigh-in.");
+  }
+}
+
+
+
   
   /*****************************************************************************************************************************
    * 
@@ -479,7 +563,10 @@ export default function UserHome()
               <div className="ft-panel-header">
                 <h2>Recent Weigh-Ins</h2>
               </div>
-            <RecentEntries refreshKey={recentRefreshKey} />
+            <RecentEntries 
+              refreshKey={recentRefreshKey} 
+              onEditEntry={openEditModal}
+            />
           </div>
 
           </div>
@@ -534,42 +621,87 @@ export default function UserHome()
             </div>
           </aside>
         </section>
-        {isGoalModalOpen && (
-        <div className="ft-modal-backdrop">
-          <div className="ft-modal">
-            <h2 className="ft-modal-title">Set goal weight</h2>
+        {/* Edit Weigh-in modal */}
+        {isEditModalOpen && (
+          <div className="ft-modal-backdrop">
+            <div className="ft-modal">
+              <h2 className="ft-modal-title">Edit weigh-in</h2>
 
-            <form onSubmit={handleSaveGoal} className="ft-modal-form">
-              <label className="ft-qa-field">
-                <span>Goal weight (lbs)</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={goalInput}
-                  onChange={(e) => setGoalInput(e.target.value)}
-                />
-              </label>
+              <form onSubmit={handleSaveEditedWeight} className="ft-modal-form">
+                {editDateDisplay && (
+                  <p className="ft-modal-subtitle">
+                    Entry date: {editDateDisplay}
+                  </p>
+                )}
 
-              {goalMessage && (
-                <div className="ft-qa-message">{goalMessage}</div>
-              )}
+                <label className="ft-qa-field">
+                  <span>Weight (lbs)</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editWeightInput}
+                    onChange={(e) => setEditWeightInput(e.target.value)}
+                  />
+                </label>
 
-              <div className="ft-modal-actions">
-                <button
-                  type="button"
-                  className="ft-btn"
-                  onClick={() => setIsGoalModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="ft-btn ft-btn-primary">
-                  Save goal
-                </button>
-              </div>
-            </form>
+                {editMessage && (
+                  <div className="ft-qa-message">{editMessage}</div>
+                )}
+
+                <div className="ft-modal-actions">
+                  <button
+                    type="button"
+                    className="ft-btn"
+                    onClick={closeEditModal}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="ft-btn ft-btn-primary">
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Goal weight modal */}
+        {isGoalModalOpen && (
+          <div className="ft-modal-backdrop">
+            <div className="ft-modal">
+              <h2 className="ft-modal-title">Set goal weight</h2>
+
+              <form onSubmit={handleSaveGoal} className="ft-modal-form">
+                <label className="ft-qa-field">
+                  <span>Goal weight (lbs)</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value)}
+                  />
+                </label>
+
+                {goalMessage && (
+                  <div className="ft-qa-message">{goalMessage}</div>
+                )}
+
+                <div className="ft-modal-actions">
+                  <button
+                    type="button"
+                    className="ft-btn"
+                    onClick={() => setIsGoalModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="ft-btn ft-btn-primary">
+                    Save goal
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -21,9 +21,12 @@ function formatISODate(dateString: string) {
 type RecentEntriesProps = {
   // whenever this number changes, we refetch
   refreshKey: number;
+  // optional callback from parent (UserHome) to open the edit modal
+  onEditEntry?: (entry: WeighInEntry) => void;
 };
 
-export default function RecentEntries({ refreshKey }: RecentEntriesProps) {
+
+export default function RecentEntries({ refreshKey, onEditEntry }: RecentEntriesProps) {
   const [entries, setEntries] = useState<WeighInEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -98,52 +101,18 @@ export default function RecentEntries({ refreshKey }: RecentEntriesProps) {
     }
   }
 
-  async function handleEdit(entry: WeighInEntry) {
-    const newWeightStr = window.prompt(
-      "Update weight (lbs):",
-      entry.weight.toString()
-    );
-    if (newWeightStr === null) return; // cancel
-
-    const newWeight = parseFloat(newWeightStr);
-    if (Number.isNaN(newWeight)) {
-      alert("Please enter a valid number.");
+  function handleEdit(entry: WeighInEntry) 
+  {
+    if (onEditEntry) {
+      // Let UserHome handle edit via the themed modal
+      onEditEntry(entry);
       return;
     }
 
-    try {
-      const jwtToken = localStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        setError("You are not logged in.");
-        return;
-      }
-
-      const resp = await fetch(`/api/weights/${entry._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwtToken}`,
-        },
-        body: JSON.stringify({ weight: newWeight }),
-      });
-
-      const data = await resp.json();
-
-      if (!resp.ok) {
-        setError(data.error || "Failed to update weigh-in.");
-        return;
-      }
-
-      const updated = data.weighIn as WeighInEntry;
-
-      setEntries((prev) =>
-        prev.map((e) => (e._id === entry._id ? updated : e))
-      );
-    } catch (err) {
-      console.error(err);
-      setError("Network error updating weigh-in.");
-    }
+    // Fallback (shouldn’t happen in your current setup):
+    console.warn("onEditEntry not provided; edit action ignored.");
   }
+
 
   if (loading) return <div className="ft-panel-placeholder">Loading…</div>;
   if (error) return <div className="ft-panel-placeholder">{error}</div>;
