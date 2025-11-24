@@ -19,7 +19,7 @@ const VerifyEmailPage: React.FC = () => {
     const verify = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/verify-email/${token}`
+          `https://formatrack.xyz/api/verify-email/${token}`
         );
         const data = await response.json();
 
