@@ -10,6 +10,7 @@ const UserSchema = new Schema({
   login:     { type: String, required: true, unique: true },
   email:     { type: String, required: true, unique: true, lowercase: true },
   password:  { type: String, required: true },
+  goalWeight: { type: Number, default: null },
 
   // --- EMAIL VERIFICATION ---
   isVerified: {

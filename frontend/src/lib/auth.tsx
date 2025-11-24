@@ -1,10 +1,11 @@
 // src/lib/auth.ts
 export type StoredUser = {
   id?: string;
-  userId?: string;    // some older code might use this
+  userId?: string;    
   firstName?: string;
   lastName?: string;
   email?: string;
+  goalWeight?: number;
 };
 
 export function getStoredUser(): StoredUser | null {

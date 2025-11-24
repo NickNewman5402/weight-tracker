@@ -591,4 +591,46 @@ exports.setApp = function (app, mongoose)
             }
           );
 
+  /*****************************************************************************************************************************
+   * 
+   *                                          PUT /API/USERS/GOAL
+   * 
+   *****************************************************************************************************************************/
+
+  app.put('/api/users/goal', authenticate, async (req, res) => {
+    try {
+      const { goalWeight } = req.body;
+
+      const parsed = Number(goalWeight);
+      if (!Number.isFinite(parsed) || parsed <= 0) 
+      {
+        return res.status(400).json({ error: 'Invalid goal weight' });
+      }
+
+      const userId = req.user && req.user.id;
+
+      if (!userId) 
+      {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { goalWeight: parsed },
+        { new: true }
+      ).select('-password');
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({ user });
+    } catch (err) {
+      console.error('Error updating goal weight:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+  });
+
+
 };
+

@@ -14,8 +14,25 @@ type WeighIn = {
   note?: string;
 };
 
-// 🔹 7-day trend: how many lbs up/down over last ~7 days
-function get7DayTrend(weighIns: WeighIn[]): number | null {
+
+/*****************************************************************************************************************************
+ *                                                                                                                          * 
+ *                                                  HELPER FUNCTIONS                                                        *
+ *                                                                                                                          *
+*****************************************************************************************************************************/
+
+
+
+/*****************************************************************************************************************************
+ * 
+ *                                                  get7DayTrend
+ * 
+*****************************************************************************************************************************/
+  
+  // 7-day trend: how many lbs up/down over last ~7 days
+
+  function get7DayTrend(weighIns: WeighIn[]): number | null 
+{
   if (weighIns.length < 2) return null;
 
   // assume weighIns is oldest → newest, but make a copy just in case
@@ -38,8 +55,17 @@ function get7DayTrend(weighIns: WeighIn[]): number | null {
   return latest.weight - first.weight; // >0 = gain, <0 = loss
 }
 
-// 🔹 streak: consecutive days with at least one weigh-in (ending at latest)
-function getStreak(weighIns: WeighIn[]): number {
+
+/*****************************************************************************************************************************
+ * 
+ *                                                  getStreak
+ * 
+*****************************************************************************************************************************/
+  
+  // streak: consecutive days with at least one weigh-in (ending at latest)
+
+  function getStreak(weighIns: WeighIn[]): number 
+{
   if (weighIns.length === 0) return 0;
 
   // unique date strings (YYYY-MM-DD)
@@ -66,10 +92,21 @@ function getStreak(weighIns: WeighIn[]): number {
 
 
 
+
+  /*****************************************************************************************************************************
+   *                                                                                                                          *
+   *                                                  USER HOME FUNCTIONS                                                     *
+   *                                                                                                                          *
+   *****************************************************************************************************************************/
+
 export default function UserHome() 
 {
   const user = getStoredUser();
   const firstName = user?.firstName || user?.firstName || "";
+
+  // Goal weight state (init from stored user if present)
+  const [goalWeight, setGoalWeight] = useState<number | null>( user?.goalWeight ?? null);
+
 
   // Quick add weigh-in form state
   const [qaDate, setQaDate] = useState<string>(() =>
@@ -81,11 +118,28 @@ export default function UserHome()
   const [recentRefreshKey, setRecentRefreshKey] = useState<number>(0); // Trigger refetch of recent weigh-ins when this changes
   const [weighIns, setWeighIns] = useState<WeighIn[]>([]);
   const [latestWeight, setLatestWeight] = useState<WeighIn | null>(null);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [goalInput, setGoalInput] = useState<string>("");
+  const [goalMessage, setGoalMessage] = useState<string>("");
+
+  // keep the input in sync with whatever goalWeight we currently have
+  useEffect(() => {
+    if (goalWeight !== null) {
+      setGoalInput(goalWeight.toString());
+    }
+  }, [goalWeight]);
 
 
-  // 🔹 Fetch all weigh-ins for the graph
-  // 🔹 Fetch all weigh-ins for the graph + latest weight card
-useEffect(() => {
+  
+  /*****************************************************************************************************************************
+   * 
+   *                                                  useEffect... fetchWeighIns
+   * 
+  *****************************************************************************************************************************/
+  // Fetch all weigh-ins for the graph
+  // Fetch all weigh-ins for the graph + latest weight card
+
+  useEffect(() => {
   const fetchWeighIns = async () => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
@@ -144,9 +198,59 @@ useEffect(() => {
 }, [recentRefreshKey]);
 
 
+
+
   const sevenDayTrend = get7DayTrend(weighIns);
   const streakDays = getStreak(weighIns);
 
+
+  // --- Goal / Progress calculations ---
+  const startingWeight =
+  weighIns.length > 0 ? weighIns[0].weight : null;
+  const currentWeight = latestWeight?.weight ?? null;
+
+
+  let goalSubline: string | null = null;
+  let percentToGoal: number | null = null;
+
+  if (
+    goalWeight !== null &&
+    startingWeight !== null &&
+    currentWeight !== null &&
+    startingWeight !== goalWeight
+  ) {
+    const isLosing = startingWeight > goalWeight;
+    const totalDelta = Math.abs(startingWeight - goalWeight);
+    const achievedDelta = Math.abs(currentWeight - startingWeight);
+    const clampedAchieved = Math.min(achievedDelta, totalDelta);
+
+    percentToGoal = (clampedAchieved / totalDelta) * 100;
+
+    if (isLosing) {
+      const remaining = currentWeight - goalWeight;
+      goalSubline =
+        remaining <= 0
+          ? `Goal reached! (${percentToGoal.toFixed(0)}% of target)`
+          : `${remaining.toFixed(1)} lbs to goal (${percentToGoal.toFixed(
+              0
+            )}% complete)`;
+    } else {
+      const remaining = goalWeight - currentWeight;
+      goalSubline =
+        remaining <= 0
+          ? `Goal reached! (${percentToGoal.toFixed(0)}% of target)`
+          : `${remaining.toFixed(1)} lbs to goal (${percentToGoal.toFixed(
+              0
+            )}% complete)`;
+    }
+  }
+
+
+  /*****************************************************************************************************************************
+   * 
+   *                                                  handleQuickAdd
+   * 
+   *****************************************************************************************************************************/
 
   async function handleQuickAdd(e: FormEvent) 
   {
@@ -210,6 +314,12 @@ useEffect(() => {
 }
 
 
+  /*****************************************************************************************************************************
+   * 
+   *                                                  handleLogout
+   * 
+   *****************************************************************************************************************************/
+
   function handleLogout() {
     // You can refine this later to match your actual auth flow
     localStorage.removeItem("token_data");
@@ -217,10 +327,81 @@ useEffect(() => {
     window.location.href = "/login";
   }
 
+  /*****************************************************************************************************************************
+   * 
+   *                                                  handleSaveGoal
+   * 
+   *****************************************************************************************************************************/
+
+    async function handleSaveGoal(e: FormEvent) {
+    e.preventDefault();
+    setGoalMessage("");
+
+    const parsed = parseFloat(goalInput);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      setGoalMessage("Please enter a valid positive number.");
+      return;
+    }
+
+    const jwtToken = localStorage.getItem("jwtToken");
+    if (!jwtToken) {
+      setGoalMessage("You are not logged in.");
+      return;
+    }
+
+    try {
+      const resp = await fetch("http://localhost:5000/api/users/goal", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify({ goalWeight: parsed }),
+      });
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        const msg = data.error || `Error: ${resp.status}`;
+        setGoalMessage(msg);
+        return;
+      }
+
+      const data = await resp.json();
+
+      // Backend returns updated user as data.user
+      if (data.user) {
+        localStorage.setItem("user_data", JSON.stringify(data.user));
+      }
+
+      // ✅ Update state so the Goal / Progress card reacts immediately
+      setGoalWeight(parsed);
+      setGoalMessage("Goal updated!");
+      setIsGoalModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      setGoalMessage("Network error saving goal.");
+    }
+  }
+
+  
+  /*****************************************************************************************************************************
+   * 
+   *                                                  RETURN
+   * 
+   *****************************************************************************************************************************/
+
   return (
     <div className="ft-page ft-user-page">
       {/* Top header bar (already part of your app) */}
-      <HeaderBar name={firstName} onLogout={handleLogout} />
+      <HeaderBar
+        name={firstName}
+        onLogout={handleLogout}
+        onEditGoal={() => {
+          setGoalMessage("");
+          setIsGoalModalOpen(true);
+        }}
+      />
+
 
       <main className="ft-user-main">
         {/* Top summary strip */}
@@ -232,10 +413,31 @@ useEffect(() => {
             </div>
             </div>
 
-          <div className="ft-card">
-            <div className="ft-card-label">Goal / progress</div>
-            <div className="ft-card-value">Coming soon</div>
-          </div>
+            <div className="ft-card">
+              <div className="ft-card-label">Goal / progress</div>
+              <div className="ft-card-value">
+                {goalWeight == null ? (
+                  // 1) No goal set yet
+                  <span>Set a goal in your profile to track progress.</span>
+                ) : startingWeight == null || currentWeight == null ? (
+                  // 2) Goal set, but no weigh-ins yet
+                  <span>
+                    Goal set: {goalWeight.toFixed(1)} lbs. Add weigh-ins to track your progress.
+                  </span>
+                ) : (
+                  // 3) Goal + weights present → show full progress
+                  <>
+                    <span>
+                      {currentWeight.toFixed(1)} / {goalWeight.toFixed(1)} lbs
+                    </span>
+                    {goalSubline && <span>{goalSubline}</span>}
+                  </>
+                )}
+              </div>
+
+            </div>
+
+
 
           <div className="ft-card">
             <div className="ft-card-label">Trend / streak</div>
@@ -332,6 +534,42 @@ useEffect(() => {
             </div>
           </aside>
         </section>
+        {isGoalModalOpen && (
+        <div className="ft-modal-backdrop">
+          <div className="ft-modal">
+            <h2 className="ft-modal-title">Set goal weight</h2>
+
+            <form onSubmit={handleSaveGoal} className="ft-modal-form">
+              <label className="ft-qa-field">
+                <span>Goal weight (lbs)</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={goalInput}
+                  onChange={(e) => setGoalInput(e.target.value)}
+                />
+              </label>
+
+              {goalMessage && (
+                <div className="ft-qa-message">{goalMessage}</div>
+              )}
+
+              <div className="ft-modal-actions">
+                <button
+                  type="button"
+                  className="ft-btn"
+                  onClick={() => setIsGoalModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="ft-btn ft-btn-primary">
+                  Save goal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </main>
     </div>
   );

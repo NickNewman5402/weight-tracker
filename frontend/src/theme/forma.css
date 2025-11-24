@@ -34,7 +34,16 @@ body.ft-theme::before{
   font-size:clamp(1.8rem,3vw,2.6rem);
   text-shadow:0 0 22px rgba(255,223,0,.35), 0 0 38px rgba(255,215,0,.25);
 }
-.ft-sub{ color:var(--text); font:500 .95rem/1.4 "Segoe UI",Roboto,system-ui,-apple-system,sans-serif; opacity:.9 }
+
+.ft-sub {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 2rem !important;  /* 👈 change this number to taste */
+  line-height: 1.4;
+  font-family: "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+  opacity: 0.9;
+}
+
 
 .ft-card{
   background:rgba(17,17,17,.6);

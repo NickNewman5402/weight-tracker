@@ -153,12 +153,9 @@
   cursor: pointer;
 }
 
-/* ------------------------------------------
-   Always show + recolor number input spinners
-   ------------------------------------------ */
-/* enable spinner visibility */
 .ft-qa-field input[type="number"] {
-  -moz-appearance: textfield;
+  appearance: textfield;       /* <-- add this */
+  -moz-appearance: textfield;  /* <-- your existing line */
 }
 
 /* WebKit (Chrome / Edge) spinner styling */
@@ -177,6 +174,8 @@
   min-height: 2.2rem;
 }
 
+/* Base button style for all FormaTrack buttons */
+.ft-btn,
 .ft-btn.ft-btn-primary {
   margin-top: 0.5rem;
   align-self: flex-start;
@@ -190,15 +189,18 @@
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
+.ft-btn:hover,
 .ft-btn.ft-btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
 }
 
+.ft-btn:active,
 .ft-btn.ft-btn-primary:active {
   transform: translateY(0);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
 }
+
 
 /* quick messages */
 .ft-qa-message {
@@ -255,3 +257,51 @@
   color: #b6862c;
 }
 
+
+
+/***************************************************************************************
+*
+*                                 GOAL WEIGHT POPUP
+*
+****************************************************************************************/
+
+.ft-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ft-modal {
+  background: #1b130b;
+  border: 1px solid #c9a35b;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+  border-radius: 12px;
+  padding: 24px 28px;
+  max-width: 420px;
+  width: 90%;
+  color: #f6e6c8;
+}
+
+.ft-modal-title {
+  font-family: "Cinzel", serif;
+  font-size: 1.4rem;
+  margin-bottom: 16px;
+  color: #f6e6c8;
+}
+
+.ft-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ft-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
