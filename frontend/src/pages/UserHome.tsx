@@ -14,6 +14,57 @@ type WeighIn = {
   note?: string;
 };
 
+// 🔹 7-day trend: how many lbs up/down over last ~7 days
+function get7DayTrend(weighIns: WeighIn[]): number | null {
+  if (weighIns.length < 2) return null;
+
+  // assume weighIns is oldest → newest, but make a copy just in case
+  const sorted = [...weighIns].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  const latest = sorted[sorted.length - 1];
+  const latestTime = new Date(latest.date).getTime();
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+  // keep only entries in the last 7 days relative to latest
+  const window = sorted.filter(
+    (w) => new Date(w.date).getTime() >= latestTime - sevenDaysMs
+  );
+
+  if (window.length < 2) return null;
+
+  const first = window[0];
+  return latest.weight - first.weight; // >0 = gain, <0 = loss
+}
+
+// 🔹 streak: consecutive days with at least one weigh-in (ending at latest)
+function getStreak(weighIns: WeighIn[]): number {
+  if (weighIns.length === 0) return 0;
+
+  // unique date strings (YYYY-MM-DD)
+  const uniqueDates = Array.from(
+    new Set(weighIns.map((w) => w.date.slice(0, 10)))
+  ).sort(); // ascending
+
+  let streak = 1;
+  for (let i = uniqueDates.length - 1; i > 0; i--) {
+    const curr = new Date(uniqueDates[i]);
+    const prev = new Date(uniqueDates[i - 1]);
+    const diffDays =
+      (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (diffDays === 1) {
+      streak++;
+    } else {
+      break; // streak broken
+    }
+  }
+
+  return streak;
+}
+
+
 
 export default function UserHome() 
 {
@@ -92,6 +143,9 @@ useEffect(() => {
   fetchWeighIns();
 }, [recentRefreshKey]);
 
+
+  const sevenDayTrend = get7DayTrend(weighIns);
+  const streakDays = getStreak(weighIns);
 
 
   async function handleQuickAdd(e: FormEvent) 
@@ -185,7 +239,25 @@ useEffect(() => {
 
           <div className="ft-card">
             <div className="ft-card-label">Trend / streak</div>
-            <div className="ft-card-value">Coming soon</div>
+            <div className="ft-card-value">
+              {/* Trend text */}
+              {sevenDayTrend === null ? (
+                <span>Not enough data yet</span>
+              ) : sevenDayTrend === 0 ? (
+                <span>Flat past 7 days</span>
+              ) : sevenDayTrend < 0 ? (
+                <span>Down {Math.abs(sevenDayTrend).toFixed(1)} lbs (7 days)</span>
+              ) : (
+                <span>Up {sevenDayTrend.toFixed(1)} lbs (7 days)</span>
+              )}
+              <br />
+              {/* Streak text */}
+              <span>
+                {streakDays > 0
+                  ? `${streakDays}-day weigh-in streak`
+                  : "No streak yet"}
+              </span>
+            </div>
           </div>
         </section>
 
